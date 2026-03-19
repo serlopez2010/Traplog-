@@ -1,0 +1,185 @@
+/* ================================================================
+   base.css — Reset, body y estructura base
+   Aplica a AMBAS apps (vitácora y dashboard).
+   ================================================================ */
+
+/* ── Reset ───────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Body ────────────────────────────────────────────────────────── */
+
+body {
+  background:  var(--bg);
+  color:       var(--text);
+  font-family: var(--font-sans);
+  min-height:  100vh;
+  overflow-x:  hidden;
+}
+
+/* Grilla de fondo decorativa (sutil, no interfiere) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,212,255,.05) 0%, transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      transparent, transparent 39px,
+      rgba(30,48,96,.3) 39px, rgba(30,48,96,.3) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent, transparent 39px,
+      rgba(30,48,96,.15) 39px, rgba(30,48,96,.15) 40px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Tipografía base ─────────────────────────────────────────────── */
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: 2px;
+  line-height: 1.1;
+}
+
+/* ── Animaciones globales ────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulsoRojo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, .4); }
+  50%       { box-shadow: 0 0 0 8px rgba(255, 23, 68, 0); }
+}
+
+@keyframes parpadeo {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes parpadeoLento {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .3; }
+}
+
+/* ── Layout vitácora (mobile-first, centrado en 480px) ───────────── */
+
+#app {
+  position:   relative;
+  z-index:    var(--z-content);
+  max-width:  480px;
+  margin:     0 auto;
+  min-height: 100vh;
+}
+
+/* ── Layout dashboard (sidebar + main) ───────────────────────────── */
+
+.layout {
+  display:    flex;
+  min-height: 100vh;
+  position:   relative;
+  z-index:    var(--z-content);
+}
+
+.sidebar {
+  width:      220px;
+  flex-shrink: 0;
+  background: rgba(13, 21, 40, .98);
+  border-right: 1px solid var(--border);
+  display:    flex;
+  flex-direction: column;
+  position:   fixed;
+  top:        0;
+  left:       0;
+  height:     100vh;
+  z-index:    var(--z-sidebar);
+  transition: transform var(--transition-slow);
+}
+
+.main {
+  margin-left: 220px;
+  flex:        1;
+  display:     flex;
+  flex-direction: column;
+  min-height:  100vh;
+  position:    relative;
+}
+
+/* ── Pantallas (screens) ─────────────────────────────────────────── */
+
+/* Vitácora */
+.screen {
+  display:   none;
+  padding:   14px 16px 100px;
+  animation: fadeIn .2s ease;
+}
+
+.screen.active { display: block; }
+
+/* Dashboard */
+.dash-screen        { display: none; }
+.dash-screen.active { display: block; }
+
+/* ── Overlay de sidebar (mobile) ─────────────────────────────────── */
+
+.sb-overlay {
+  display:    none;
+  position:   fixed;
+  inset:      0;
+  background: rgba(0, 0, 0, .5);
+  z-index:    calc(var(--z-sidebar) - 1);
+}
+
+.sb-overlay.show { display: block; }
+
+/* ── Responsive: ocultar sidebar en mobile ───────────────────────── */
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .main {
+    margin-left: 0;
+    padding-bottom: 80px;
+  }
+}
+
+/* ── Print ───────────────────────────────────────────────────────── */
+
+@media print {
+  .sidebar,
+  .filter-bar,
+  .hamburger,
+  .sb-overlay,
+  .bottom-nav-mobile,
+  .bottom-nav,
+  .fab {
+    display: none !important;
+  }
+
+  .main       { margin-left: 0; }
+  body        { background: white; color: black; }
+
+  .kpi-card, .chart-card, .disp-card, .turno-card {
+    border:     1px solid #ccc;
+    background: white;
+  }
+
+  .kpi-val, .disp-pct, .turno-stat-val {
+    color: black !important;
+  }
+}
