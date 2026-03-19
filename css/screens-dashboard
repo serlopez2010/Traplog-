@@ -1,0 +1,229 @@
+/* ================================================================
+   screens-dashboard.css — Estilos específicos del dashboard
+   Solo se incluye en dashboard.html.
+   ================================================================ */
+
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+
+.sb-logo      { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+.sb-title     { font-family: var(--font-display); font-size: 22px; letter-spacing: 3px; color: var(--accent); }
+.sb-sub       { font-family: var(--font-mono); font-size: 9px; color: var(--text2); letter-spacing: 1px; margin-top: 2px; }
+.sb-nav       { flex: 1; padding: 12px 0; overflow-y: auto; }
+.sb-section   { font-family: var(--font-mono); font-size: 9px; color: var(--text2); letter-spacing: 2px; padding: 10px 20px 4px; text-transform: uppercase; }
+
+.sb-item {
+  display:      flex;
+  align-items:  center;
+  gap:          10px;
+  padding:      10px 20px;
+  cursor:       pointer;
+  transition:   all var(--transition-fast);
+  border-left:  3px solid transparent;
+  font-size:    13px;
+  color:        var(--text2);
+}
+
+.sb-item:hover  { background: rgba(0,212,255,.05); color: var(--text); }
+.sb-item.active { background: rgba(0,212,255,.08); color: var(--accent); border-left-color: var(--accent); }
+.sb-item .ic    { font-size: 16px; width: 20px; text-align: center; }
+
+.sb-footer    { padding: 16px 20px; border-top: 1px solid var(--border); }
+.sb-user      { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.sb-user-dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.sb-user-name { font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+
+.sb-btn-back {
+  display:         flex;
+  align-items:     center;
+  gap:             8px;
+  padding:         8px 12px;
+  background:      rgba(0, 212, 255, .08);
+  border:          1px solid rgba(0, 212, 255, .2);
+  border-radius:   var(--radius-sm);
+  color:           var(--accent);
+  font-family:     var(--font-mono);
+  font-size:       10px;
+  letter-spacing:  1px;
+  cursor:          pointer;
+  width:           100%;
+  justify-content: center;
+  transition:      background var(--transition-fast);
+}
+
+.sb-btn-back:hover { background: rgba(0,212,255,.15); }
+
+.sb-version { font-family: var(--font-mono); font-size: 8px; color: rgba(122,156,200,.3); letter-spacing: 1px; text-align: center; margin-top: 8px; }
+
+
+/* ── Top bar ─────────────────────────────────────────────────────── */
+
+.topbar {
+  background:      rgba(7, 12, 26, .95);
+  border-bottom:   1px solid var(--border);
+  padding:         14px 24px;
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  position:        sticky;
+  top:             0;
+  z-index:         var(--z-sticky);
+  backdrop-filter: blur(12px);
+}
+
+.topbar-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; color: var(--text); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-time  { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+.topbar-date  { font-family: var(--font-mono); font-size: 10px; color: var(--text2); }
+
+.hamburger {
+  display:    none;
+  background: none;
+  border:     none;
+  cursor:     pointer;
+  color:      var(--text);
+  font-size:  22px;
+  padding:    4px;
+}
+
+
+/* ── Barra de filtros ────────────────────────────────────────────── */
+
+.filter-bar {
+  background:  var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding:     10px 16px;
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  flex-wrap:   wrap;
+}
+
+.filter-label {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  color:          var(--text2);
+  letter-spacing: 1px;
+  white-space:    nowrap;
+}
+
+.filter-select {
+  background:         var(--surface2);
+  border:             1px solid var(--border);
+  border-radius:      var(--radius-sm);
+  color:              var(--text);
+  font-family:        var(--font-mono);
+  font-size:          11px;
+  padding:            6px 8px;
+  outline:            none;
+  cursor:             pointer;
+  -webkit-appearance: none;
+  transition:         border-color var(--transition-fast);
+}
+
+.filter-select:focus { border-color: var(--accent); }
+
+.filter-btn {
+  background:     var(--accent);
+  color:          var(--bg);
+  border:         none;
+  border-radius:  var(--radius-sm);
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  letter-spacing: 1px;
+  padding:        7px 12px;
+  cursor:         pointer;
+  font-weight:    600;
+  white-space:    nowrap;
+  transition:     opacity var(--transition-fast);
+}
+
+.filter-btn.secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+.period-chip {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  background:     rgba(255, 107, 53, .12);
+  color:          var(--accent2);
+  border:         1px solid rgba(255, 107, 53, .3);
+  border-radius:  20px;
+  padding:        4px 10px;
+  letter-spacing: 1px;
+  white-space:    nowrap;
+}
+
+
+/* ── Área de contenido ───────────────────────────────────────────── */
+
+.content { padding: 20px; flex: 1; }
+
+
+/* ── Navegación inferior mobile (dashboard) ──────────────────────── */
+
+.bottom-nav-mobile {
+  display:          none;
+  position:         fixed;
+  bottom:           0;
+  left:             0;
+  right:            0;
+  background:       rgba(7, 12, 26, .97);
+  border-top:       1px solid var(--border);
+  z-index:          9999;
+  backdrop-filter:  blur(12px);
+  -webkit-transform: translateZ(0);
+  transform:        translateZ(0);
+}
+
+.bnav-scroll {
+  display:          flex;
+  overflow-x:       auto;
+  padding:          6px 4px 16px;
+  gap:              2px;
+  scrollbar-width:  none;
+}
+
+.bnav-scroll::-webkit-scrollbar { display: none; }
+
+.bnav-btn {
+  flex-shrink:    0;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  padding:        6px 10px;
+  background:     none;
+  border:         none;
+  cursor:         pointer;
+  color:          var(--text2);
+  border-radius:  var(--radius-sm);
+  min-width:      60px;
+  transition:     all var(--transition-fast);
+}
+
+.bnav-btn.active { color: var(--accent); background: rgba(0,212,255,.08); }
+.bnav-btn svg    { width: 18px; height: 18px; }
+.bnav-lbl        { font-family: var(--font-mono); font-size: 8px; letter-spacing: .5px; white-space: nowrap; }
+
+
+/* ── Pendientes (dashboard) ──────────────────────────────────────── */
+/* Nota: .pend-card base está en components.css; acá solo los específicos del dash */
+
+.pend-equipo { font-weight: 600; font-size: 14px; }
+.pend-meta   { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.pend-time   { font-family: var(--font-mono); font-size: 10px; color: var(--text2); text-align: right; flex-shrink: 0; }
+.pend-desc   { font-size: 12px; color: var(--text2); margin-top: 6px; line-height: 1.4; }
+.pend-age    { font-family: var(--font-mono); font-size: 10px; color: var(--warn); margin-top: 6px; }
+
+
+/* ── Responsive dashboard ────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .hamburger         { display: block; }
+  .bottom-nav-mobile { display: block; }
+  .content           { padding: 12px; }
+  .filter-bar        { padding: 8px 12px; overflow-x: auto; flex-wrap: nowrap; }
+  .topbar            { padding: 10px 14px; }
+  #custom-dates      { flex-wrap: wrap; }
+  #disp-cards        { grid-template-columns: 1fr !important; }
+  #disp-mini         { grid-template-columns: 1fr !important; }
+}
