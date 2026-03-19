@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#070c1a">
+<title>TRAPLOG — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/screens-dashboard.css">
+</head>
+<body>
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-title">TRAPLOG</div>
+    <div class="sb-sub">INFORMES Y ANÁLISIS</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Vistas</div>
+    <div class="sb-item active" onclick="showDash('resumen')" id="nav-resumen"><span class="ic">📊</span> Resumen General</div>
+    <div class="sb-item" onclick="showDash('disponibilidad')" id="nav-disponibilidad"><span class="ic">📈</span> Disponibilidad</div>
+    <div class="sb-item" onclick="showDash('pareto')" id="nav-pareto"><span class="ic">🏆</span> Ranking de Fallas</div>
+    <div class="sb-item" onclick="showDash('turnos')" id="nav-turnos"><span class="ic">🔄</span> Comparativo Turnos</div>
+    <div class="sb-item" onclick="showDash('pendientes')" id="nav-pendientes"><span class="ic">⚠️</span> Pendientes</div>
+    <div class="sb-item" onclick="showDash('eventos')" id="nav-eventos"><span class="ic">📋</span> Todos los Eventos</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-user-dot"></div>
+      <div class="sb-user-name">DASHBOARD</div>
+    </div>
+    <button class="sb-btn-back" onclick="window.location.href='vitacora-trapiches.html'">← VOLVER A LA APP</button>
+    <div class="sb-version">v0.3</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="hamburger" onclick="openSidebar()">☰</button>
+      <div class="topbar-title" id="topbar-title">RESUMEN GENERAL</div>
+    </div>
+    <div class="topbar-right">
+      <div>
+        <div class="topbar-time" id="clock">--:--:--</div>
+        <div class="topbar-date" id="dateline">---</div>
+      </div>
+      <button onclick="window.print()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:1px">🖨</button>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <span class="filter-label">PERÍODO:</span>
+    <select class="filter-select" id="f-periodo" onchange="onFilterChange()">
+      <option value="turno-actual">Turno actual</option>
+      <option value="dia">Día de fábrica</option>
+      <option value="semana">Últimos 7 días</option>
+      <option value="mes" selected>Últimos 30 días</option>
+      <option value="zafra">Zafra completa</option>
+      <option value="custom">Personalizado</option>
+    </select>
+    <div id="custom-dates" style="display:none;gap:6px;align-items:center">
+      <input type="date" id="f-desde" class="filter-select" style="padding:5px 6px">
+      <span class="filter-label">→</span>
+      <input type="date" id="f-hasta" class="filter-select" style="padding:5px 6px">
+    </div>
+    <select class="filter-select" id="f-linea" onchange="onFilterChange()">
+      <option value="todas">Todas</option>
+      <option value="T1" style="color:#1976D2">T1</option>
+      <option value="T2" style="color:#388E3C">T2</option>
+      <option value="T3" style="color:#F57C00">T3</option>
+    </select>
+    <select class="filter-select" id="f-turno" onchange="onFilterChange()">
+      <option value="todos">Todos los turnos</option>
+      <option value="Mañana">🌅 Mañana</option>
+      <option value="Tarde">🌇 Tarde</option>
+      <option value="Noche">🌙 Noche</option>
+    </select>
+    <button class="filter-btn" onclick="applyFilter()">APLICAR</button>
+    <button class="filter-btn secondary" onclick="resetFilter()">RESET</button>
+    <span class="period-chip" id="period-chip">—</span>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- RESUMEN GENERAL -->
+    <div class="dash-screen active" id="screen-resumen">
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="sec-title">DISPONIBILIDAD POR LÍNEA</div>
+      <div class="disp-grid" id="disp-mini"></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Paradas por tipo de problema</div>
+          <div class="chart-wrap"><canvas id="chart-tipo"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Tiempo perdido por línea (min)</div>
+          <div class="chart-wrap"><canvas id="chart-linea"></canvas></div>
+        </div>
+        <div class="chart-card full">
+          <div class="chart-title">Evolución — tiempo perdido por día de fábrica</div>
+          <div class="chart-wrap tall"><canvas id="chart-timeline"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISPONIBILIDAD -->
+    <div class="dash-screen" id="screen-disponibilidad">
+      <div class="sec-title">DISPONIBILIDAD POR LÍNEA</div>
+      <div class="disp-grid" id="disp-cards"></div>
+      <div class="chart-grid">
+        <div class="chart-card full">
+          <div class="chart-title">Disponibilidad por turno y línea (%)</div>
+          <div class="chart-wrap tall"><canvas id="chart-disp-turnos"></canvas></div>
+        </div>
+      </div>
+      <div class="sec-title">DETALLE DE MINUTOS PERDIDOS</div>
+      <div id="disp-tabla"></div>
+    </div>
+
+    <!-- RANKING DE FALLAS -->
+    <div class="dash-screen" id="screen-pareto">
+      <div class="sec-title">RANKING POR LÍNEA · EQUIPO</div>
+      <div id="pareto-equipo"></div>
+      <div class="sec-title">RANKING POR SECTOR</div>
+      <div id="pareto-sector"></div>
+      <div class="sec-title">RANKING POR COMPONENTE</div>
+      <div id="pareto-comp"></div>
+      <div class="chart-grid" style="margin-top:20px">
+        <div class="chart-card">
+          <div class="chart-title">Distribución por sector (tiempo)</div>
+          <div class="chart-wrap"><canvas id="chart-sector-dona"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Cantidad de eventos por tipo</div>
+          <div class="chart-wrap"><canvas id="chart-tipo-count"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARATIVO TURNOS -->
+    <div class="dash-screen" id="screen-turnos">
+      <div class="sec-title">COMPARATIVO POR TURNO</div>
+      <div class="turno-comp-grid" id="turno-cards"></div>
+      <div class="chart-grid">
+        <div class="chart-card full">
+          <div class="chart-title">Tiempo perdido por turno y línea (min)</div>
+          <div class="chart-wrap tall"><canvas id="chart-turno-linea"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENDIENTES -->
+    <div class="dash-screen" id="screen-pendientes">
+      <div class="sec-title">EVENTOS PENDIENTES SIN CERRAR</div>
+      <div id="pendientes-list"></div>
+    </div>
+
+    <!-- TODOS LOS EVENTOS -->
+    <div class="dash-screen" id="screen-eventos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="sec-title" style="margin:0;flex:1">TABLA DE EVENTOS</div>
+        <button onclick="exportCSV()" style="background:var(--ok);color:var(--bg);border:none;border-radius:6px;padding:8px 14px;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;font-weight:600">⬇ EXPORTAR CSV</button>
+      </div>
+      <div class="table-wrap"><table id="tabla-eventos">
+        <thead><tr>
+          <th>LÍNEA</th><th>TURNO</th><th>DÍA FÁB.</th><th>EQUIPO</th><th>COMPONENTE</th>
+          <th>SECTOR</th><th>TIPO</th><th>IMPACTO</th><th>INICIO</th><th>FIN</th>
+          <th>DURACIÓN</th><th>ESTADO</th><th>OPERADOR</th><th>DESCRIPCIÓN</th>
+        </tr></thead>
+        <tbody id="tabla-body"></tbody>
+      </table></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- PARETO PANEL -->
+<div class="pareto-panel" id="pareto-panel" onclick="closeParetoPanel(event)">
+  <div class="pareto-panel-box" id="pareto-panel-box">
+    <div class="pareto-panel-header">
+      <div>
+        <div class="pareto-panel-title" id="pareto-panel-title">—</div>
+        <div class="pareto-panel-count" id="pareto-panel-count">—</div>
+      </div>
+      <button class="pareto-panel-close" onclick="closeParetoPanel()">✕</button>
+    </div>
+    <div class="pareto-panel-list" id="pareto-panel-list"></div>
+    <div class="pareto-panel-footer">
+      <button onclick="irAEventosConFiltro()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:11px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;font-weight:600">VER TODOS EN EVENTOS →</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV MOBILE -->
+<nav class="bottom-nav-mobile">
+  <div class="bnav-scroll">
+    <button class="bnav-btn active" data-screen="resumen" onclick="showDash('resumen')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span class="bnav-lbl">RESUMEN</span>
+    </button>
+    <button class="bnav-btn" data-screen="disponibilidad" onclick="showDash('disponibilidad')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="bnav-lbl">DISPON.</span>
+    </button>
+    <button class="bnav-btn" data-screen="pareto" onclick="showDash('pareto')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+      <span class="bnav-lbl">RANKING</span>
+    </button>
+    <button class="bnav-btn" data-screen="turnos" onclick="showDash('turnos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      <span class="bnav-lbl">TURNOS</span>
+    </button>
+    <button class="bnav-btn" data-screen="pendientes" onclick="showDash('pendientes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span class="bnav-lbl">PENDIENT.</span>
+    </button>
+    <button class="bnav-btn" data-screen="eventos" onclick="showDash('eventos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span class="bnav-lbl">EVENTOS</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+// ======= COLORES DE LÍNEA =======
+const LINEA_COLOR = { T1:'#1976D2', T2:'#388E3C', T3:'#F57C00' };
+function lineaColor(l){ return LINEA_COLOR[l]||'#7a9cc8'; }
+function lineaBadge(l){
+  const c=lineaColor(l);
+  return `<span class="td-linea-badge" style="background:${c}22;color:${c};border:1px solid ${c}55">${l}</span>`;
+}
+function lineaBadgePareto(l){
+  const c=lineaColor(l);
+  return `<span class="pareto-lbl-linea" style="background:${c}22;color:${c};border:1px solid ${c}44">${l}</span>`;
+}
+
+// ======= DATA =======
+function loadEventos(){ return JSON.parse(localStorage.getItem('vitacora_trapiches')||'[]'); }
+let allEventos = loadEventos();
+let filteredEventos = [...allEventos];
+let charts = {};
+
+// ======= CLOCK =======
+function updateClock(){
+  const n=new Date();
+  const h=String(n.getHours()).padStart(2,'0'), m=String(n.getMinutes()).padStart(2,'0'), s=String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent=`${h}:${m}:${s}`;
+  const dias=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'],mes=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  document.getElementById('dateline').textContent=`${dias[n.getDay()]} ${n.getDate()} ${mes[n.getMonth()]} ${n.getFullYear()}`;
+}
+setInterval(updateClock,1000); updateClock();
+
+// ======= TURNO =======
+function getTurnoInfo(d){
+  const h=d.getHours(),tot=h*60+d.getMinutes();
+  let turno=tot>=5*60&&tot<13*60?'Mañana':tot>=13*60&&tot<21*60?'Tarde':'Noche';
+  const base=new Date(d); if(tot<6*60) base.setDate(base.getDate()-1);
+  return {turno, dia:base.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})};
+}
+
+// ======= SIDEBAR =======
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('sb-overlay').classList.add('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-overlay').classList.remove('show'); }
+
+function showDash(name){
+  // Cerrar sidebar sin conflicto
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('show');
+  setTimeout(()=>{
+    document.querySelectorAll('.dash-screen').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+    document.getElementById('screen-'+name)?.classList.add('active');
+    document.getElementById('nav-'+name)?.classList.add('active');
+    document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
+    const titles={resumen:'RESUMEN GENERAL',disponibilidad:'DISPONIBILIDAD DE LÍNEAS',pareto:'RANKING DE FALLAS',turnos:'COMPARATIVO DE TURNOS',pendientes:'EVENTOS PENDIENTES',eventos:'TODOS LOS EVENTOS'};
+    document.getElementById('topbar-title').textContent=titles[name]||name.toUpperCase();
+    renderCurrent(name);
+  },50);
+}
+
+// ======= FILTER =======
+function onFilterChange(){
+  const p=document.getElementById('f-periodo').value;
+  document.getElementById('custom-dates').style.display=p==='custom'?'flex':'none';
+}
+
+function applyFilter(){
+  filteredEventos=getFiltered();
+  renderCurrent(getCurrentScreen());
+}
+
+function resetFilter(){
+  document.getElementById('f-periodo').value='mes';
+  document.getElementById('f-linea').value='todas';
+  document.getElementById('f-turno').value='todos';
+  document.getElementById('custom-dates').style.display='none';
+  applyFilter();
+}
+
+function getCurrentScreen(){ return document.querySelector('.dash-screen.active')?.id.replace('screen-',''); }
+
+function getFiltered(){
+  allEventos=loadEventos();
+  const periodo=document.getElementById('f-periodo').value;
+  const linea=document.getElementById('f-linea').value;
+  const turno=document.getElementById('f-turno').value;
+  const now=new Date();
+  const {turno:ct, dia:cd}=getTurnoInfo(now);
+  let evs=[...allEventos];
+
+  if(periodo==='turno-actual'){
+    evs=evs.filter(e=>e.fecha_fabrica===cd&&e.turno===ct);
+    document.getElementById('period-chip').textContent=`TURNO ${ct.toUpperCase()} · ${cd}`;
+  } else if(periodo==='dia'){
+    evs=evs.filter(e=>e.fecha_fabrica===cd);
+    document.getElementById('period-chip').textContent=`DÍA ${cd}`;
+  } else if(periodo==='semana'){
+    const d=new Date(now); d.setDate(d.getDate()-7);
+    evs=evs.filter(e=>new Date(e.timestamp)>=d);
+    document.getElementById('period-chip').textContent='ÚLTIMOS 7 DÍAS';
+  } else if(periodo==='mes'){
+    const d=new Date(now); d.setDate(d.getDate()-30);
+    evs=evs.filter(e=>new Date(e.timestamp)>=d);
+    document.getElementById('period-chip').textContent='ÚLTIMOS 30 DÍAS';
+  } else if(periodo==='zafra'){
+    document.getElementById('period-chip').textContent='ZAFRA COMPLETA';
+  } else if(periodo==='custom'){
+    const desde=document.getElementById('f-desde').value;
+    const hasta=document.getElementById('f-hasta').value;
+    if(desde) evs=evs.filter(e=>new Date(e.timestamp)>=new Date(desde));
+    if(hasta) evs=evs.filter(e=>new Date(e.timestamp)<=new Date(hasta+'T23:59:59'));
+    document.getElementById('period-chip').textContent=`${desde||'?'} → ${hasta||'?'}`;
+  }
+  if(linea!=='todas') evs=evs.filter(e=>e.linea===linea);
+  if(turno!=='todos') evs=evs.filter(e=>e.turno===turno);
+  return evs;
+}
+
+// ======= RENDER DISPATCHER =======
+function renderCurrent(name){
+  const n=name||getCurrentScreen();
+  filteredEventos=getFiltered();
+  if(n==='resumen') renderResumen();
+  else if(n==='disponibilidad') renderDisponibilidad();
+  else if(n==='pareto') renderPareto();
+  else if(n==='turnos') renderTurnos();
+  else if(n==='pendientes') renderPendientes();
+  else if(n==='eventos') renderEventos();
+}
+
+// ======= CHART HELPER =======
+const COLORS=['#00d4ff','#ff6b35','#ffcc00','#00e676','#ff1744','#7c4dff','#e040fb','#ff80ab'];
+const C_T1='#1976D2', C_T2='#388E3C', C_T3='#F57C00';
+const C_DANGER='#ff1744', C_OK='#00e676', C_WARN='#ffcc00', C_ACCENT='#00d4ff', C_ACCENT2='#ff6b35';
+Chart.defaults.color='#7a9cc8';
+Chart.defaults.borderColor='rgba(30,48,96,0.5)';
+Chart.defaults.font.family="'IBM Plex Sans', sans-serif";
+
+function mkChart(id,config){
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  charts[id]=new Chart(ctx,config);
+}
+
+function barConfig(labels,data,colors,label=''){
+  return {type:'bar',data:{labels,datasets:[{label,data,backgroundColor:colors||COLORS,borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:!!label}},
+    scales:{x:{grid:{color:'rgba(30,48,96,.4)'}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}};
+}
+function donaConfig(labels,data,colors){
+  return {type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors||COLORS,borderWidth:2,borderColor:'#070c1a'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#7a9cc8',font:{size:11}}}}}};
+}
+function lineConfig(labels,datasets){
+  return {type:'line',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9cc8'}}},
+    scales:{x:{grid:{color:'rgba(30,48,96,.4)'},ticks:{maxRotation:45}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}};
+}
+
+// ======= UTILS =======
+function sumMin(evs){ return evs.filter(e=>e.impacto==='parada'&&Number(e.duracion_min)>0).reduce((s,e)=>s+Number(e.duracion_min),0); }
+function dispPct(minPerd,turnos){ const t=480*(turnos||1); return t>0?Math.max(0,((t-minPerd)/t*100)):100; }
+function fmtPct(v){ return v.toFixed(1)+'%'; }
+function dispColor(pct){ return pct>=95?C_OK:pct>=85?C_WARN:C_DANGER; }
+function fmtHora(dt){ if(!dt)return'—'; const d=new Date(dt); if(isNaN(d))return'—'; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function parseDate(str){ const p=str.split('/'); return p.length===3?new Date(p[2],p[1]-1,p[0]).getTime():0; }
+
+// ======= RESUMEN =======
+function renderResumen(){
+  const evs=filteredEventos;
+  const paradas=evs.filter(e=>e.impacto==='parada');
+  const minPerd=sumMin(evs);
+  const pendientes=evs.filter(e=>e.pendiente).length;
+  const equiposUnicos=new Set(paradas.map(e=>e.equipo)).size;
+
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi-card accent"><div class="kpi-label">Total Eventos</div><div class="kpi-val">${evs.length}</div><div class="kpi-sub">${paradas.length} paradas · ${evs.length-paradas.length} sin parada</div></div>
+    <div class="kpi-card danger"><div class="kpi-label">Tiempo Perdido</div><div class="kpi-val">${Math.round(minPerd)}</div><div class="kpi-unit">MINUTOS</div><div class="kpi-sub">${(minPerd/60).toFixed(1)} horas</div></div>
+    <div class="kpi-card ok"><div class="kpi-label">Cerrados</div><div class="kpi-val">${evs.filter(e=>e.estado==='Cerrado').length}</div><div class="kpi-sub">de ${evs.length} registrados</div></div>
+    <div class="kpi-card warn"><div class="kpi-label">Pendientes</div><div class="kpi-val">${pendientes}</div><div class="kpi-sub">sin cerrar</div></div>
+    <div class="kpi-card accent2"><div class="kpi-label">Equipos Afectados</div><div class="kpi-val">${equiposUnicos}</div><div class="kpi-sub">con paradas</div></div>
+  `;
+
+  // Disponibilidad por línea
+  const lineas=['T1','T2','T3'];
+  document.getElementById('disp-mini').innerHTML=lineas.map(l=>{
+    const mp=sumMin(evs.filter(e=>e.linea===l));
+    const turnos=new Set(evs.filter(e=>e.linea===l).map(e=>e.turno+'_'+e.fecha_fabrica)).size||1;
+    const pct=dispPct(mp,turnos);
+    const col=dispColor(pct);
+    const lc=lineaColor(l);
+    return `<div class="disp-card" style="border-top:3px solid ${lc}">
+      <div class="disp-linea" style="color:${lc}">${l}</div>
+      <div class="disp-pct" style="color:${col}">${fmtPct(pct)}</div>
+      <div class="disp-bar-bg"><div class="disp-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div class="disp-label">DISPONIBILIDAD</div>
+      <div class="disp-mins">${Math.round(mp)} min perdidos</div>
+    </div>`;
+  }).join('');
+
+  // Charts
+  const tipos={};
+  paradas.forEach(e=>{tipos[e.tipo_evento]=(tipos[e.tipo_evento]||0)+Number(e.duracion_min||0);});
+  mkChart('chart-tipo',barConfig(Object.keys(tipos),Object.values(tipos).map(Math.round),COLORS,'Min perdidos'));
+
+  const mpLinea=lineas.map(l=>Math.round(sumMin(evs.filter(e=>e.linea===l))));
+  mkChart('chart-linea',barConfig(lineas,mpLinea,[C_T1,C_T2,C_T3],'Minutos'));
+
+  const byDate={};
+  paradas.forEach(e=>{if(e.fecha_fabrica)byDate[e.fecha_fabrica]=(byDate[e.fecha_fabrica]||0)+Number(e.duracion_min||0);});
+  const fechas=Object.keys(byDate).sort((a,b)=>parseDate(a)-parseDate(b));
+  mkChart('chart-timeline',lineConfig(fechas,[{label:'Min perdidos',data:fechas.map(f=>Math.round(byDate[f])),borderColor:C_DANGER,backgroundColor:'rgba(255,23,68,.1)',fill:true,tension:.3,pointBackgroundColor:C_DANGER}]));
+}
+
+// ======= DISPONIBILIDAD =======
+function renderDisponibilidad(){
+  const evs=filteredEventos;
+  const lineas=['T1','T2','T3'];
+
+  document.getElementById('disp-cards').innerHTML=lineas.map(l=>{
+    const evL=evs.filter(e=>e.linea===l&&e.impacto==='parada');
+    const mp=sumMin(evL);
+    const nTurnos=Math.max(new Set(evs.filter(e=>e.linea===l).map(e=>e.turno+'_'+e.fecha_fabrica)).size,1);
+    const pct=dispPct(mp,nTurnos);
+    const col=dispColor(pct);
+    const lc=lineaColor(l);
+    return `<div class="disp-card" style="border-top:3px solid ${lc}">
+      <div class="disp-linea" style="color:${lc}">${l}</div>
+      <div class="disp-pct" style="color:${col}">${fmtPct(pct)}</div>
+      <div class="disp-bar-bg"><div class="disp-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div class="disp-label">DISPONIBILIDAD</div>
+      <div class="disp-mins">${Math.round(mp)} min perdidos · ${evL.length} paradas</div>
+    </div>`;
+  }).join('');
+
+  const turnos=['Mañana','Tarde','Noche'];
+  const datasets=lineas.map((l)=>({
+    label:l,
+    data:turnos.map(t=>{
+      const mp=sumMin(evs.filter(e=>e.linea===l&&e.turno===t&&e.impacto==='parada'));
+      const n=new Set(evs.filter(e=>e.linea===l&&e.turno===t).map(e=>e.fecha_fabrica)).size||1;
+      return parseFloat(dispPct(mp,n).toFixed(1));
+    }),
+    backgroundColor:lineaColor(l),borderRadius:6
+  }));
+  mkChart('chart-disp-turnos',{type:'bar',data:{labels:turnos,datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9cc8'}}},
+    scales:{x:{grid:{color:'rgba(30,48,96,.4)'}},y:{min:0,max:100,grid:{color:'rgba(30,48,96,.4)'},ticks:{callback:v=>v+'%'}}}}});
+
+  const rows=lineas.flatMap(l=>turnos.map(t=>{
+    const evLT=evs.filter(e=>e.linea===l&&e.turno===t&&e.impacto==='parada');
+    const mp=sumMin(evLT);
+    const n=new Set(evs.filter(e=>e.linea===l&&e.turno===t).map(e=>e.fecha_fabrica)).size||1;
+    const pct=dispPct(mp,n);
+    return {l,t,mp:Math.round(mp),pct,count:evLT.length,n};
+  }));
+  document.getElementById('disp-tabla').innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>LÍNEA</th><th>TURNO</th><th>TURNOS ANALIZADOS</th><th>PARADAS</th><th>MIN PERDIDOS</th><th>DISPONIBILIDAD</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td>${lineaBadge(r.l)}</td><td>${r.t}</td><td>${r.n}</td><td>${r.count}</td>
+      <td class="td-dur">${r.mp} min</td>
+      <td><span style="color:${dispColor(r.pct)};font-family:var(--mono);font-weight:600">${fmtPct(r.pct)}</span></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ======= PARETO =======
+function renderPareto(){
+  const paradas=filteredEventos.filter(e=>e.impacto==='parada'&&Number(e.duracion_min)>0);
+  const todos=filteredEventos; // para contar eventos también sin parada
+  const totalMin=sumMin(paradas);
+
+  // Pareto con línea+equipo, sector, componente — muestra minutos + cantidad de eventos
+  function makePareto(containerId, keyFn, colorFn){
+    const map={};
+    // Minutos de paradas
+    paradas.forEach(e=>{
+      const k=keyFn(e);
+      if(!map[k]) map[k]={t:0,n:0,linea:e.linea};
+      map[k].t+=Number(e.duracion_min);
+      map[k].n++;
+    });
+    // Contar TODOS los eventos (incluyendo sin parada) para el mismo key
+    const mapAll={};
+    todos.forEach(e=>{const k=keyFn(e); mapAll[k]=(mapAll[k]||0)+1;});
+
+    const sorted=Object.entries(map).sort((a,b)=>b[1].t-a[1].t);
+    if(!sorted.length){
+      document.getElementById(containerId).innerHTML=`<div class="empty"><div class="empty-ic">📊</div><div class="empty-txt">Sin datos de paradas.</div></div>`;
+      return;
+    }
+    document.getElementById(containerId).innerHTML=sorted.map(([k,v])=>{
+      const pct=totalMin>0?(v.t/totalMin*100):0;
+      const color=colorFn?colorFn(k,v):COLORS[0];
+      const totalEvKey=mapAll[k]||v.n;
+      return `<div class="pareto-row" style="cursor:pointer" onclick="openParetoPanel('${k.replace(/'/g,"\\'")}','${containerId}')">
+        <div class="pareto-lbl">${k}</div>
+        <div class="pareto-bg"><div class="pareto-fill" style="width:${pct}%;background:${color}">
+          <span class="pareto-fill-val">${Math.round(v.t)}m</span>
+        </div></div>
+        <div class="pareto-pct">${pct.toFixed(0)}%</div>
+        <div class="pareto-count">
+          <span class="pareto-count-min">${Math.round(v.t)} min</span>
+          <span class="pareto-count-ev">${totalEvKey} ev.</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Por línea · equipo — con badge de color de línea en la etiqueta
+  const mapLE={};
+  paradas.forEach(e=>{
+    const k=`${e.linea}|${e.equipo}`;
+    if(!mapLE[k]) mapLE[k]={t:0,n:0,linea:e.linea,equipo:e.equipo};
+    mapLE[k].t+=Number(e.duracion_min);
+    mapLE[k].n++;
+  });
+  const mapAllLE={};
+  todos.forEach(e=>{const k=`${e.linea}|${e.equipo}`; mapAllLE[k]=(mapAllLE[k]||0)+1;});
+  const sortedLE=Object.entries(mapLE).sort((a,b)=>b[1].t-a[1].t);
+  document.getElementById('pareto-equipo').innerHTML=sortedLE.length===0?
+    `<div class="empty"><div class="empty-ic">📊</div><div class="empty-txt">Sin datos.</div></div>`:
+    sortedLE.map(([k,v])=>{
+      const pct=totalMin>0?(v.t/totalMin*100):0;
+      const color=lineaColor(v.linea);
+      const totalEv=mapAllLE[k]||v.n;
+      return `<div class="pareto-row" style="cursor:pointer" onclick="openParetoPanel('${k.replace(/'/g,"\\'")}','pareto-equipo')">
+        <div class="pareto-lbl">${lineaBadgePareto(v.linea)}${v.equipo}</div>
+        <div class="pareto-bg"><div class="pareto-fill" style="width:${pct}%;background:${color}">
+          <span class="pareto-fill-val">${Math.round(v.t)}m</span>
+        </div></div>
+        <div class="pareto-pct">${pct.toFixed(0)}%</div>
+        <div class="pareto-count">
+          <span class="pareto-count-min">${Math.round(v.t)} min</span>
+          <span class="pareto-count-ev">${totalEv} ev.</span>
+        </div>
+      </div>`;
+    }).join('');
+
+  makePareto('pareto-sector', e=>e.sector, ()=>C_ACCENT);
+  makePareto('pareto-comp', e=>e.componente||'—', ()=>C_ACCENT2);
+
+  // Charts
+  const sectores={};
+  paradas.forEach(e=>{sectores[e.sector]=(sectores[e.sector]||0)+Number(e.duracion_min||0);});
+  mkChart('chart-sector-dona',donaConfig(Object.keys(sectores),Object.values(sectores)));
+
+  const tipos={};
+  todos.forEach(e=>{tipos[e.tipo_evento]=(tipos[e.tipo_evento]||0)+1;});
+  mkChart('chart-tipo-count',barConfig(Object.keys(tipos),Object.values(tipos),COLORS,'Cantidad'));
+}
+
+// ======= TURNOS =======
+function renderTurnos(){
+  const evs=filteredEventos;
+  const turnos=['Mañana','Tarde','Noche'];
+  const lineas=['T1','T2','T3'];
+  const icons={Mañana:'🌅',Tarde:'🌇',Noche:'🌙'};
+
+  document.getElementById('turno-cards').innerHTML=turnos.map(t=>{
+    const evT=evs.filter(e=>e.turno===t);
+    const par=evT.filter(e=>e.impacto==='parada');
+    const mp=sumMin(evT);
+    const nDias=new Set(evT.map(e=>e.fecha_fabrica)).size||1;
+    const pct=dispPct(mp,nDias);
+    return `<div class="turno-card">
+      <div class="turno-name">${icons[t]} ${t}</div>
+      <div class="turno-stat"><div class="turno-stat-val" style="color:var(--accent)">${evT.length}</div><div class="turno-stat-lbl">EVENTOS</div></div>
+      <div class="turno-stat"><div class="turno-stat-val" style="color:var(--danger)">${par.length}</div><div class="turno-stat-lbl">PARADAS</div></div>
+      <div class="turno-stat"><div class="turno-stat-val" style="color:var(--accent2)">${Math.round(mp)}</div><div class="turno-stat-lbl">MIN PERDIDOS</div></div>
+      <div class="turno-stat"><div class="turno-stat-val" style="color:${dispColor(pct)}">${fmtPct(pct)}</div><div class="turno-stat-lbl">DISPONIBILIDAD</div></div>
+    </div>`;
+  }).join('');
+
+  const datasets=lineas.map(l=>({
+    label:l,
+    data:turnos.map(t=>Math.round(sumMin(evs.filter(e=>e.linea===l&&e.turno===t)))),
+    backgroundColor:lineaColor(l),borderRadius:6
+  }));
+  mkChart('chart-turno-linea',{type:'bar',data:{labels:turnos,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#7a9cc8'}}},
+    scales:{x:{grid:{color:'rgba(30,48,96,.4)'}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}});
+}
+
+// ======= PENDIENTES =======
+function renderPendientes(){
+  const pend=allEventos.filter(e=>e.pendiente);
+  const c=document.getElementById('pendientes-list');
+  if(!pend.length){
+    c.innerHTML=`<div class="empty"><div class="empty-ic">✅</div><div class="empty-txt">No hay eventos pendientes.<br>¡Todo cerrado!</div></div>`;
+    return;
+  }
+  c.innerHTML=pend.map(e=>{
+    const now=new Date();
+    const ini=e.inicio_evento?new Date(e.inicio_evento):new Date(e.timestamp);
+    const diffH=Math.round((now-ini)/3600000);
+    const diffTxt=diffH<1?'Hace menos de 1 hora':diffH<24?`Hace ${diffH} hs`:`Hace ${Math.round(diffH/24)} días`;
+    const lc=lineaColor(e.linea);
+    const estadoBadge=e.estado==='Oportunamente'?`<span class="badge b-oport">⏳ OPORT.</span>`:
+                      e.estado==='Abierto'?`<span class="badge b-abierto">🛑 ABIERTO</span>`:
+                      `<span class="badge b-warn">PENDIENTE</span>`;
+    return `<div class="pend-card" style="border-left-color:${lc}">
+      <div class="pend-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            ${lineaBadge(e.linea)}
+            <div class="pend-equipo">${e.equipo}</div>
+          </div>
+          <div class="pend-meta">${e.componente||'—'} · ${e.sector||'—'} · ${e.tipo_evento||'—'} · <strong>${e.responsable||'—'}</strong></div>
+        </div>
+        <div class="pend-time">
+          ${fmtHora(e.inicio_evento)}
+          <div style="margin-top:4px">${estadoBadge}</div>
+        </div>
+      </div>
+      <div class="pend-desc">${e.descripcion}</div>
+      <div class="pend-age">⏱ ${diffTxt} · ${e.fecha_fabrica||''} · Turno ${e.turno||''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ======= EVENTOS TABLE =======
+function renderEventos(){
+  const evs=filteredEventos.slice().reverse();
+  const tbody=document.getElementById('tabla-body');
+  if(!evs.length){
+    tbody.innerHTML=`<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--text2)">Sin eventos para el período seleccionado</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=evs.map(e=>{
+    const ti=fmtHora(e.inicio_evento);
+    const tf=fmtHora(e.fin_evento);
+    const ib=e.impacto==='parada'?`<span class="badge b-danger">🛑</span>`:`<span class="badge b-ok">⚙️</span>`;
+    const est=e.estado==='Cerrado'?`<span class="badge b-cerrado">CERRADO</span>`:
+              e.estado==='Oportunamente'?`<span class="badge b-oport">OPORT.</span>`:
+              `<span class="badge b-abierto">ABIERTO</span>`;
+    return `<tr>
+      <td>${lineaBadge(e.linea||'?')}</td>
+      <td style="font-family:var(--mono);font-size:10px">${e.turno||'—'}</td>
+      <td class="td-time">${e.fecha_fabrica||'—'}</td>
+      <td class="td-equipo">${e.equipo||'—'}</td>
+      <td class="td-comp">${e.componente||'—'}</td>
+      <td><span class="badge b-blue">${e.sector||'—'}</span></td>
+      <td style="font-size:11px">${e.tipo_evento||'—'}</td>
+      <td>${ib}</td>
+      <td class="td-time">${ti}</td>
+      <td class="td-time">${tf}</td>
+      <td class="td-dur">${e.duracion_min?e.duracion_min+' min':'—'}</td>
+      <td>${est}</td>
+      <td style="font-family:var(--mono);font-size:10px">${e.responsable||'—'}</td>
+      <td class="td-desc" title="${e.descripcion||''}">${e.descripcion||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ======= PARETO PANEL =======
+let paretoPanelKey=null;
+let paretoPanelType=null;
+
+function openParetoPanel(key, containerId){
+  paretoPanelKey=key;
+  paretoPanelType=containerId;
+
+  // Determinar tipo de filtro según el contenedor
+  let evsFiltrados;
+  if(containerId==='pareto-equipo'){
+    // key es "LINEA|EQUIPO"
+    const [linea,equipo]=key.split('|');
+    evsFiltrados=filteredEventos.filter(e=>e.linea===linea&&e.equipo===equipo);
+    document.getElementById('pareto-panel-title').innerHTML=`${lineaBadge(linea)} ${equipo}`;
+  } else if(containerId==='pareto-sector'){
+    evsFiltrados=filteredEventos.filter(e=>e.sector===key);
+    document.getElementById('pareto-panel-title').textContent=key;
+  } else {
+    evsFiltrados=filteredEventos.filter(e=>(e.componente||'—')===key);
+    document.getElementById('pareto-panel-title').textContent=key;
+  }
+
+  const paradas=evsFiltrados.filter(e=>e.impacto==='parada');
+  const minPerd=sumMin(evsFiltrados);
+  document.getElementById('pareto-panel-count').textContent=
+    `${evsFiltrados.length} eventos · ${paradas.length} paradas · ${Math.round(minPerd)} min perdidos`;
+
+  // Ordenar más recientes primero
+  const sorted=[...evsFiltrados].reverse();
+  document.getElementById('pareto-panel-list').innerHTML=sorted.length===0?
+    `<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">Sin eventos</div>`:
+    sorted.map(e=>{
+      const ti=fmtHora(e.inicio_evento);
+      const tf=e.fin_evento?fmtHora(e.fin_evento):'—';
+      const ib=e.impacto==='parada'?`<span class="badge b-danger">🛑</span>`:`<span class="badge b-ok">⚙️</span>`;
+      const lc=lineaColor(e.linea);
+      return `<div class="pareto-ev-row">
+        <div class="pareto-ev-top">
+          <div style="display:flex;align-items:center;gap:6px">
+            ${lineaBadge(e.linea)}
+            <strong style="font-size:12px">${e.equipo}</strong>
+            <span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-align:right">
+            ${e.fecha_fabrica||''}<br>${ti}→${tf}${e.duracion_min?` <span style="color:var(--accent2)">${e.duracion_min}m</span>`:''}
+          </div>
+        </div>
+        <div class="pareto-ev-desc">${e.descripcion||'—'}</div>
+        <div style="margin-top:4px">${ib} <span style="font-family:var(--mono);font-size:9px;color:var(--text2)">${e.turno||''} · ${e.responsable||''}</span></div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('pareto-panel').classList.add('show');
+}
+
+function closeParetoPanel(e){
+  if(e&&e.target!==document.getElementById('pareto-panel')) return;
+  document.getElementById('pareto-panel').classList.remove('show');
+}
+
+function irAEventosConFiltro(){
+  document.getElementById('pareto-panel').classList.remove('show');
+  showDash('eventos');
+}
+
+// ======= EXPORT CSV =======
+function exportCSV(){
+  const h=['ID','Timestamp','Fecha_fabrica','Turno','Linea','Equipo','Componente','Sector','Tipo_evento','Descripcion','Inicio_evento','Fin_evento','Duracion_min','Estado','Responsable'];
+  const r=filteredEventos.map(e=>[e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable].join(','));
+  const csv=[h.join(','),...r].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`traplog_informe_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ======= INIT =======
+resetFilter();
+setInterval(()=>{ allEventos=loadEventos(); applyFilter(); },30000);
+</script>
+</body>
+</html>
