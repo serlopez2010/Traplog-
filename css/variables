@@ -1,0 +1,60 @@
+/* ================================================================
+   variables.css — Tokens de diseño globales
+   FUENTE ÚNICA DE VERDAD para colores, tipografías y espaciados.
+
+   Para cambiar el tema visual de TODA la app, solo editá este archivo.
+   ================================================================ */
+
+:root {
+
+  /* ── Fondos y superficies ────────────────────────────────────── */
+  --bg:       #070c1a;   /* Fondo de página */
+  --surface:  #0d1528;   /* Cards, modales, paneles */
+  --surface2: #132040;   /* Inputs, superficies secundarias */
+  --border:   #1e3060;   /* Bordes generales */
+
+  /* ── Colores de acento ───────────────────────────────────────── */
+  --accent:  #00d4ff;   /* Cian principal */
+  --accent2: #ff6b35;   /* Naranja secundario */
+
+  /* ── Colores de estado ───────────────────────────────────────── */
+  --ok:     #00e676;   /* Verde: éxito, cerrado, disponible */
+  --warn:   #ffcc00;   /* Amarillo: advertencia, pendiente */
+  --danger: #ff1744;   /* Rojo: error, parada, peligro */
+
+  /* ── Texto ───────────────────────────────────────────────────── */
+  --text:  #e8f0fe;   /* Texto principal */
+  --text2: #7a9cc8;   /* Texto secundario, labels, subtítulos */
+
+  /* ── Colores por línea de producción ─────────────────────────── */
+  --t1: #1976D2;   /* Trapiche 1 — azul */
+  --t2: #388E3C;   /* Trapiche 2 — verde */
+  --t3: #F57C00;   /* Trapiche 3 — naranja */
+
+  /* ── Tipografías ─────────────────────────────────────────────── */
+  --font-mono:    'IBM Plex Mono', monospace;    /* Datos, códigos, labels */
+  --font-sans:    'IBM Plex Sans', sans-serif;   /* Texto corriente */
+  --font-display: 'Bebas Neue', sans-serif;      /* Títulos, números grandes */
+
+  /* ── Espaciados base ─────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* ── Sombras ─────────────────────────────────────────────────── */
+  --shadow-accent: 0 4px 20px rgba(255, 107, 53, .5);
+
+  /* ── Transiciones ────────────────────────────────────────────── */
+  --transition-fast: .15s ease;
+  --transition-med:  .2s ease;
+  --transition-slow: .3s ease;
+
+  /* ── Z-index scale ───────────────────────────────────────────── */
+  --z-content:  1;
+  --z-sticky:   40;
+  --z-sidebar:  50;
+  --z-overlay:  100;
+  --z-modal:    200;
+  --z-toast:    300;
+  --z-topmost:  500;
+}
