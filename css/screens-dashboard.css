@@ -69,6 +69,8 @@
   top:             0;
   z-index:         var(--z-sticky);
   backdrop-filter: blur(12px);
+  width:           100%;
+  flex-shrink:     0;
 }
 
 .topbar-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; color: var(--text); }
@@ -97,6 +99,11 @@
   align-items: center;
   gap:         8px;
   flex-wrap:   wrap;
+  position:    sticky;
+  top:         53px;
+  z-index:     calc(var(--z-sticky) - 1);
+  width:       100%;
+  flex-shrink: 0;
 }
 
 .filter-label {
@@ -221,9 +228,15 @@
   .hamburger         { display: block; }
   .bottom-nav-mobile { display: block; }
   .content           { padding: 12px; }
-  .filter-bar        { padding: 8px 12px; overflow-x: auto; flex-wrap: nowrap; }
+  .filter-bar        { padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
   .topbar            { padding: 10px 14px; }
+  .pareto-lbl        { width: 90px; font-size: 11px; }
+  .pareto-count      { display: none; }
+  .pareto-row        { flex-wrap: nowrap; }
   #custom-dates      { flex-wrap: wrap; }
   #disp-cards        { grid-template-columns: 1fr !important; }
   #disp-mini         { grid-template-columns: 1fr !important; }
+  #disp-tabla .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #screen-eventos .table-wrap { overflow-x: auto; }
+  #screen-eventos table       { min-width: 700px; }
 }
