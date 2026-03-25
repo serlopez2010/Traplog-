@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/screens-vitacora.css">
+<script src="db.js"></script>
 </head>
 
 <!-- LOGIN -->
@@ -491,21 +492,46 @@ function getCompsOrdenados(linea, equipo){
 }
 
 // ======= USUARIOS =======
-function loadUsers(){return JSON.parse(localStorage.getItem('vt_users')||JSON.stringify([{name:'admin',pass:'admin123',role:'admin'}]));}
-function saveUsers(u){localStorage.setItem('vt_users',JSON.stringify(u));}
-let usuarios=loadUsers(), currentUser=null;
+// v0.4: usuarios viven en Google Sheets — se cargan al hacer login
+// saveUsers mantiene copia local como cache
+function saveUsers(u){localStorage.setItem('vt_users_cache',JSON.stringify(u));}
+let usuarios=[], currentUser=null;
 
-function doLogin(){
+async function doLogin(){
   const n=document.getElementById('login-user').value.trim();
   const p=document.getElementById('login-pass').value;
-  const u=usuarios.find(x=>x.name===n&&x.pass===p);
-  if(!u){document.getElementById('login-error').style.display='block';return;}
-  currentUser={name:u.name,role:u.role};
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('uname').textContent=u.name.toUpperCase();
-  document.getElementById('udot').className='user-dot dot-'+u.role;
-  document.getElementById('nav-admin').style.display=u.role==='admin'?'flex':'none';
-  renderHome();
+  const btnLogin=document.querySelector('#login-screen .btn-primary');
+  btnLogin.textContent='VERIFICANDO...';btnLogin.disabled=true;
+  document.getElementById('login-error').style.display='none';
+  try {
+    const res=await db_login(n,p);
+    if(!res.ok){
+      document.getElementById('login-error').style.display='block';
+      document.getElementById('login-error').textContent=res.error||'Usuario o contraseña incorrectos';
+      btnLogin.textContent='ENTRAR';btnLogin.disabled=false;
+      return;
+    }
+    const u=res.user;
+    currentUser={name:u.name,role:u.role};
+    btnLogin.textContent='CARGANDO...';
+    const evRes=await db_getEventos();
+    if(evRes.ok){
+      eventos=evRes.eventos;
+      localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));
+    } else {
+      eventos=JSON.parse(localStorage.getItem('vitacora_trapiches')||'[]');
+      toast('⚠️ Sin conexión — usando datos locales');
+    }
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('uname').textContent=u.name.toUpperCase();
+    document.getElementById('udot').className='user-dot dot-'+u.role;
+    document.getElementById('nav-admin').style.display=u.role==='admin'?'flex':'none';
+    renderHome();
+  } catch(err){
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('login-error').textContent='Error de conexión — intentá de nuevo';
+    btnLogin.textContent='ENTRAR';btnLogin.disabled=false;
+  }
 }
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
@@ -518,22 +544,27 @@ function doLogout(){
   document.getElementById('login-error').style.display='none';
 }
 
-function addUser(){
+async function addUser(){
   const n=document.getElementById('nu-name').value.trim();
   const p=document.getElementById('nu-pass').value.trim();
   const r=document.getElementById('nu-role').value;
   if(!n||!p){toast('⚠️ Completá nombre y contraseña');return;}
   if(usuarios.find(u=>u.name===n)){toast('⚠️ Ese usuario ya existe');return;}
-  usuarios.push({name:n,pass:p,role:r});
-  saveUsers(usuarios); renderUserList(); toast('✅ Usuario creado');
+  const nuevoUser={name:n,pass:p,role:r,activo:true};
+  usuarios.push(nuevoUser);
+  saveUsers(usuarios); renderUserList(); toast('⏳ Guardando usuario...');
   document.getElementById('nu-name').value='';
   document.getElementById('nu-pass').value='';
+  const res=await db_saveUsuario(nuevoUser);
+  toast(res.ok?'✅ Usuario creado':'⚠️ Error al guardar en Sheets: '+res.error);
 }
 
-function delUser(n){
+async function delUser(n){
   if(n==='admin'){toast('⚠️ No podés eliminar el admin principal');return;}
   if(!confirm(`¿Eliminar "${n}"?`))return;
-  usuarios=usuarios.filter(u=>u.name!==n); saveUsers(usuarios); renderUserList(); toast('✅ Eliminado');
+  usuarios=usuarios.filter(u=>u.name!==n); saveUsers(usuarios); renderUserList();
+  const res=await db_deleteUsuario(n);
+  toast(res.ok?'✅ Eliminado':'⚠️ Error al eliminar en Sheets: '+res.error);
 }
 
 function toggleEditUser(name){
@@ -541,18 +572,29 @@ function toggleEditUser(name){
   if(form) form.style.display=form.style.display==='none'?'block':'none';
 }
 
-function saveEditUser(name){
+async function saveEditUser(name){
   const newPass=document.getElementById('edit-pass-'+name).value.trim();
   const newRole=document.getElementById('edit-role-sel-'+name).value;
   const u=usuarios.find(x=>x.name===name);
   if(!u)return;
   if(newPass) u.pass=newPass;
   u.role=newRole;
-  saveUsers(usuarios); renderUserList(); toast('✅ Usuario actualizado');
+  saveUsers(usuarios); renderUserList(); toast('⏳ Actualizando usuario...');
+  const cambios={name,role:newRole,activo:u.activo};
+  if(newPass) cambios.pass=newPass;
+  const res=await db_saveUsuario(cambios);
+  toast(res.ok?'✅ Usuario actualizado':'⚠️ Error al actualizar en Sheets: '+res.error);
 }
 
-function renderUserList(){
+async function renderUserList(){
   const list=document.getElementById('user-list');if(!list)return;
+  // Cargar usuarios frescos desde Sheets
+  list.innerHTML='<div style="color:var(--text2);font-size:12px;padding:12px">Cargando usuarios...</div>';
+  const res=await db_getUsuarios();
+  if(res.ok){
+    usuarios=res.usuarios;
+    saveUsers(usuarios);
+  }
   const rl={admin:'👑 ADMIN',editor:'✏️ EDITOR',viewer:'👁 LECTOR'};
   const rc={admin:'role-admin',editor:'role-editor',viewer:'role-viewer'};
   list.innerHTML=usuarios.map(u=>`
@@ -889,7 +931,7 @@ function buildResumen(){
 }
 
 // ======= GUARDAR =======
-function guardar(){
+async function guardar(){
   const dur=ev.inicio&&ev.fin?Math.round((new Date(ev.fin)-new Date(ev.inicio))/60000):null;
   const saved={
     id:Date.now(),timestamp:new Date().toISOString(),
@@ -903,11 +945,15 @@ function guardar(){
     pendiente:ev.estado==='Oportunamente'||ev.estado==='Abierto',
     _exported:false,
   };
+  // Guardar local inmediatamente (UX rápida)
   eventos.push(saved);
   localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));
   toast('✅ Evento registrado');
   resetForm();
   setTimeout(()=>showScreen('home'),300);
+  // Sincronizar con Sheets en background
+  const res=await db_saveEvento(saved);
+  if(!res.ok) toast('⚠️ Error al sincronizar con Sheets: '+res.error);
 }
 
 function resetForm(){
@@ -936,7 +982,7 @@ function resetForm(){
 }
 
 // ======= CLOSE EVENT =======
-function closeEvent(id){
+async function closeEvent(id){
   if(currentUser?.role==='viewer'){document.getElementById('ro-overlay').classList.add('show');return;}
   const e=eventos.find(x=>x.id===id);if(!e)return;
   const n=new Date();
@@ -946,6 +992,8 @@ function closeEvent(id){
   e.estado='Cerrado';e.pendiente=false;
   localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));
   renderHome();toast('✅ Evento cerrado');
+  // Sincronizar con Sheets en background
+  await db_updateEvento(id,{fin_evento:e.fin_evento,duracion_min:e.duracion_min,estado:'Cerrado',pendiente:false});
 }
 
 // ======= EDITAR EVENTO =======
@@ -1013,6 +1061,9 @@ function saveEdit(){
   // Si está en pantalla eventos, refrescar también
   if(document.getElementById('screen-pareto')?.classList.contains('active')) initEventosScreen();
   toast('✅ Evento actualizado');
+  // Sincronizar con Sheets en background
+  const campos={linea:e.linea,equipo:e.equipo,componente:e.componente,sector:e.sector,tipo_evento:e.tipo_evento,descripcion:e.descripcion,inicio_evento:e.inicio_evento,fin_evento:e.fin_evento,duracion_min:e.duracion_min,estado:e.estado,pendiente:e.pendiente};
+  db_updateEvento(id,campos);
 }
 
 function closeEditModal(){
@@ -1268,7 +1319,7 @@ function renderEventosFiltrados(){
 
 
 // ======= BORRAR EVENTO =======
-function deleteEvent(id, fromEventos=false){
+async function deleteEvent(id, fromEventos=false){
   if(currentUser?.role==='viewer'){document.getElementById('ro-overlay').classList.add('show');return;}
   const e=eventos.find(x=>x.id===id);if(!e)return;
   const {dia,turno}=nowTurno();
@@ -1282,6 +1333,9 @@ function deleteEvent(id, fromEventos=false){
   toast('🗑 Evento eliminado');
   if(fromEventos) initEventosScreen();
   else renderHome();
+  // Sincronizar con Sheets en background
+  const res=await db_deleteEvento(id);
+  if(!res.ok) toast('⚠️ Error al eliminar en Sheets: '+res.error);
 }
 
 // ======= RUEDA DE TIEMPO =======
@@ -1415,7 +1469,7 @@ function renderExport(){
     </div>`;
   }).join('');
 }
-function markExp(id){const e=eventos.find(x=>x.id===id);if(e){e._exported=true;localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));}renderExport();toast('✔ Exportado');}
+async function markExp(id){const e=eventos.find(x=>x.id===id);if(e){e._exported=true;localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));}renderExport();toast('✔ Exportado');await db_updateEvento(id,{_exported:true});}
 
 // ======= VOICE =======
 function initVoice(){
