@@ -26,7 +26,42 @@ async function db_login(user, pass) {
 
 // ======= EVENTOS =======
 async function db_getEventos() {
-  return await dbCall({ action: 'getEventos' });
+  const res = await dbCall({ action: 'getEventos' });
+  if (!res.ok) return res;
+  // Normalizar campos que Sheets puede convertir automáticamente
+  res.eventos = res.eventos.map(e => {
+    // fecha_fabrica: si viene como ISO (ej: 2026-03-26T03:00:00.000Z) → dd/mm/yyyy
+    if (e.fecha_fabrica && String(e.fecha_fabrica).includes('T')) {
+      const d = new Date(e.fecha_fabrica);
+      e.fecha_fabrica = String(d.getDate()).padStart(2,'0') + '/' +
+                        String(d.getMonth()+1).padStart(2,'0') + '/' +
+                        d.getFullYear();
+    }
+    // inicio_evento y fin_evento: si Sheets los convirtió a fecha, normalizar a ISO local
+    ['inicio_evento','fin_evento'].forEach(campo => {
+      const val = e[campo];
+      if (val && String(val).includes('T')) {
+        const d = new Date(val);
+        if (!isNaN(d)) {
+          e[campo] = d.getFullYear() + '-' +
+                     String(d.getMonth()+1).padStart(2,'0') + '-' +
+                     String(d.getDate()).padStart(2,'0') + 'T' +
+                     String(d.getHours()).padStart(2,'0') + ':' +
+                     String(d.getMinutes()).padStart(2,'0');
+        }
+      }
+    });
+    // id siempre número
+    e.id = Number(e.id);
+    // pendiente siempre booleano
+    e.pendiente = e.pendiente === true || e.pendiente === 'true';
+    // _exported siempre booleano
+    e._exported = e._exported === true || e._exported === 'true';
+    // duracion_min siempre número o vacío
+    e.duracion_min = e.duracion_min !== '' && e.duracion_min !== undefined ? Number(e.duracion_min) : '';
+    return e;
+  });
+  return res;
 }
 
 async function db_saveEvento(evento) {
