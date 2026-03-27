@@ -12,9 +12,18 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/screens-dashboard.css">
+<script src="db.js"></script>
 </head>
 <body>
 <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(7,12,26,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+  <div style="font-family:var(--display);font-size:28px;letter-spacing:4px;color:var(--accent)">TRAPLOG</div>
+  <div style="font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:2px">CARGANDO DATOS...</div>
+  <div style="width:48px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px">
+    <div style="height:100%;width:40%;background:var(--accent);border-radius:2px;animation:loading-bar 1s ease-in-out infinite alternate"></div>
+  </div>
+</div>
+<style>@keyframes loading-bar{from{transform:translateX(-100%)}to{transform:translateX(250%)}}</style>
 <div class="layout">
 
 <!-- SIDEBAR -->
@@ -38,7 +47,7 @@
       <div class="sb-user-name">DASHBOARD</div>
     </div>
     <button class="sb-btn-back" onclick="window.location.href='index.html'">← VOLVER A LA APP</button>
-    <div class="sb-version">v0.3</div>
+    <div class="sb-version">v0.4</div>
   </div>
 </aside>
 
@@ -249,10 +258,37 @@ function lineaBadgePareto(l){
 }
 
 // ======= DATA =======
-function loadEventos(){ return JSON.parse(localStorage.getItem('vitacora_trapiches')||'[]'); }
-let allEventos = loadEventos();
-let filteredEventos = [...allEventos];
+let allEventos = [];
+let filteredEventos = [];
 let charts = {};
+
+async function loadEventos(){
+  // Mostrar indicador de carga
+  document.getElementById('loading-overlay').style.display='flex';
+  try {
+    // Intentar cargar desde Sheets
+    const res = await db_getEventos();
+    if(res.ok){
+      allEventos = res.eventos;
+      // Actualizar cache local
+      localStorage.setItem('vitacora_trapiches', JSON.stringify(allEventos));
+    } else {
+      // Fallback a cache local
+      allEventos = JSON.parse(localStorage.getItem('vitacora_trapiches')||'[]');
+      console.warn('Sheets no disponible, usando cache local');
+    }
+  } catch(err) {
+    allEventos = JSON.parse(localStorage.getItem('vitacora_trapiches')||'[]');
+    console.warn('Error cargando datos:', err);
+  }
+  document.getElementById('loading-overlay').style.display='none';
+  return allEventos;
+}
+
+async function recargarYFiltrar(){
+  await loadEventos();
+  applyFilter();
+}
 
 // ======= CLOCK =======
 function updateClock(){
@@ -314,7 +350,7 @@ function resetFilter(){
 function getCurrentScreen(){ return document.querySelector('.dash-screen.active')?.id.replace('screen-',''); }
 
 function getFiltered(){
-  allEventos=loadEventos();
+  // allEventos ya fue cargado async por recargarYFiltrar()
   const periodo=document.getElementById('f-periodo').value;
   const linea=document.getElementById('f-linea').value;
   const turno=document.getElementById('f-turno').value;
@@ -767,8 +803,9 @@ function exportCSV(){
 }
 
 // ======= INIT =======
-resetFilter();
-setInterval(()=>{ allEventos=loadEventos(); applyFilter(); },30000);
+// Cargar datos al inicio y arrancar auto-refresh cada 30s
+recargarYFiltrar();
+setInterval(recargarYFiltrar, 30000);
 </script>
 </body>
 </html>
