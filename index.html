@@ -19,6 +19,7 @@
 <script src="db.js"></script>
 <script src="js/data.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/wizard.js"></script>
 </head>
 
 <!-- LOGIN -->
@@ -138,13 +139,17 @@
     </div>
   </div>
 
-  <!-- PLACEHOLDER DEL WIZARD (Se inyectará dinámicamente en el Módulo 2) -->
-  <div class="screen" id="screen-wizard" style="display:flex;align-items:center;justify-content:center;">
-    <div style="text-align:center;color:var(--text2)">
-      <div style="font-size:40px;margin-bottom:10px">🚧</div>
-      <div style="font-family:var(--display);font-size:18px;letter-spacing:2px;color:var(--text)">NUEVO WIZARD</div>
-      <div style="font-size:12px;margin-top:5px">Módulo en desarrollo (Próximo paso)</div>
+    <!-- WIZARD INTELIGENTE -->
+  <div class="screen" id="screen-wizard" style="padding-bottom:20px;">
+    <div class="section-label" id="wizard-title">PASO 1</div>
+    <div id="wizard-content">
+      <!-- Acá se inyecta la magia -->
     </div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-secondary" id="wizard-back" onclick="TrapWizard.back()" style="display:none">← ATRÁS</button>
+      <button class="btn btn-primary" id="wizard-next" onclick="TrapWizard.next()">CONTINUAR →</button>
+    </div>
+    <button class="btn btn-secondary" onclick="showScreen('home')" style="margin-top:8px;width:100%">CANCELAR</button>
   </div>
 
   <!-- EVENTOS -->
@@ -350,7 +355,8 @@ function showScreen(name) {
 
 function tryNew() {
   if (!currentUser || currentUser.role === 'viewer') { document.getElementById('ro-overlay').classList.add('show'); return; }
-  showScreen('wizard'); // Acá se conectará el nuevo wizard
+  TrapWizard.init(); // <--- LE AGREGAMOS ESTA LÍNEA
+  showScreen('wizard');
 }
 
 // ------- PANTALLA HOME (Usa la nueva Tarjeta Universal y TrapUtils) -------
