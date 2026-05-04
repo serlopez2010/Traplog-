@@ -208,7 +208,7 @@ const TrapWizard = (function() {
   function htmlTiempos() {
     const mostrarFin = ev.impacto === 'parada';
     return `
-      <div class="field-group"><label>DESCRIPCIÓN</label><textarea id="wiz-desc" placeholder="Detalle lo ocurrido..." style="min-height:80px">${ev.descripcion||''}</textarea></div>
+      <div class="field-group"><label>DESCRIPCIÓN</label><textarea id="wiz-desc" placeholder="Detalle lo ocurrido..." style="min-height:80px" oninput="TrapWizard.ev.descripcion=this.value">${ev.descripcion||''}</textarea></div>
       <div class="section-label">INICIO DEL EVENTO</div>
       <button class="btn btn-secondary" onclick="TrapWizard.setNow('inicio_evento')" style="width:100%">🕒 REGISTRAR HORA AHORA: <span id="wiz-time-ini">${TrapUtils.fmtHora(ev.inicio_evento) !== '—' ? TrapUtils.fmtHora(ev.inicio_evento) : '--- : ---'}</span></button>
       ${mostrarFin ? `
