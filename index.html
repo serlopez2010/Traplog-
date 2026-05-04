@@ -574,8 +574,120 @@ function renderEventosFiltrados() {
 
 // ------- ACCIONES RÁPIDAS (Se mantienen para que funcione la app) -------
 async function closeEvent(id) { if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show'); const e = eventos.find(x => x.id === id); if (!e) return; const n = new Date(); e.fin_evento = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'T'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); e.duracion_min = e.inicio_evento ? Math.round((n - new Date(e.inicio_evento)) / 60000) : ''; e.estado = 'Cerrado'; e.pendiente = false; localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); renderHome(); toast('✅ Evento cerrado'); await db_updateEvento(id, { fin_evento: e.fin_evento, duracion_min: e.duracion_min, estado: 'Cerrado', pendiente: false }); }
-function openEditModal(id) { toast('⚠️ Edición en migración'); }
-function closeEditModal() { document.getElementById('modal-edit').classList.remove('show'); }
+// ------- MODAL EDITAR EVENTO -------
+function openEditModal(id) {
+  if (currentUser?.role === 'viewer') { document.getElementById('ro-overlay').classList.add('show'); return; }
+  const e = eventos.find(x => x.id === id);
+  if (!e) return;
+  
+  // 1. Cargar datos estáticos
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-linea').value = e.linea || 'T1';
+  document.getElementById('edit-sector').value = e.sector || 'Mecánica';
+  document.getElementById('edit-tipo').value = e.tipo_evento || 'Rotura';
+  document.getElementById('edit-desc').value = e.descripcion || '';
+  document.getElementById('edit-ini').value = e.inicio_evento || '';
+  document.getElementById('edit-fin').value = e.fin_evento || '';
+
+  // 2. Cargar Equipos dinámicamente según la línea
+  updateEditLinea(e.equipo);
+
+  // 3. Esperar un microsegundo para que el navegador dibuje los equipos, y luego cargar el componente
+  setTimeout(() => {
+    document.getElementById('edit-equipo').value = e.equipo || '';
+    updateEditComps(e.componente);
+  }, 50);
+
+  // 4. Abrir el modal
+  document.getElementById('modal-edit').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('modal-edit').classList.remove('show');
+}
+
+function updateEditLinea(selEquipo) {
+  const l = document.getElementById('edit-linea').value;
+  const s = document.getElementById('edit-equipo');
+  s.innerHTML = '<option value="">— Seleccionar —</option>';
+  (TrapData.EQUIPOS[l] || []).forEach(e => {
+    const o = document.createElement('option');
+    o.value = e; o.textContent = e;
+    s.appendChild(o);
+  });
+  if (selEquipo) s.value = selEquipo;
+}
+
+function updateEditComps(selComp) {
+  const l = document.getElementById('edit-linea').value;
+  const eq = document.getElementById('edit-equipo').value;
+  const comps = eq ? TrapData.getCompsOrdenados(l, eq, eventos) : [...TrapData.ALL_COMPS, 'Otro'];
+  const s = document.getElementById('edit-comp');
+  s.innerHTML = '<option value="">— Seleccionar —</option>';
+  comps.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    s.appendChild(o);
+  });
+  if (selComp) s.value = selComp;
+}
+
+async function saveEdit() {
+  const id = Number(document.getElementById('edit-id').value);
+  const e = eventos.find(x => x.id === id);
+  if (!e) return;
+
+  const ini = document.getElementById('edit-ini').value;
+  const fin = document.getElementById('edit-fin').value;
+
+  // Validación de lógica de tiempos
+  if (ini && fin && new Date(fin) <= new Date(ini)) {
+    toast('⚠️ El fin no puede ser menor o igual al inicio');
+    return;
+  }
+
+  // Actualizar el objeto del evento
+  e.linea = document.getElementById('edit-linea').value;
+  e.equipo = document.getElementById('edit-equipo').value;
+  e.componente = document.getElementById('edit-comp').value;
+  e.sector = document.getElementById('edit-sector').value;
+  e.tipo_evento = document.getElementById('edit-tipo').value;
+  e.descripcion = document.getElementById('edit-desc').value.trim();
+  e.inicio_evento = ini;
+  e.fin_evento = fin;
+
+  // Recalcular duración y estado automáticamente
+  if (ini && fin) {
+    e.duracion_min = Math.round((new Date(fin) - new Date(ini)) / 60000);
+    e.estado = 'Cerrado';
+    e.pendiente = false;
+  } else if (e.impacto === 'parada' && !fin) {
+    e.duracion_min = '';
+    e.estado = 'Abierto';
+    e.pendiente = true;
+  }
+
+  // Guardar local y refrescar
+  localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
+  closeEditModal();
+  renderHome(); // Si estamos en el home, refresca las tarjetas
+  
+  // Si estamos mirando la pantalla de Eventos, también refresca
+  if (document.getElementById('screen-pareto')?.classList.contains('active')) {
+    initEventosScreen();
+  }
+
+  toast('✅ Evento actualizado');
+
+  // Sincronizar con Sheets en background
+  const campos = {
+    linea: e.linea, equipo: e.equipo, componente: e.componente,
+    sector: e.sector, tipo_evento: e.tipo_evento, descripcion: e.descripcion,
+    inicio_evento: e.inicio_evento, fin_evento: e.fin_evento,
+    duracion_min: e.duracion_min, estado: e.estado, pendiente: e.pendiente
+  };
+  db_updateEvento(id, campos);
+}
 async function deleteEvent(id, fromList = false) { if (!confirm('¿Borrar este evento?')) return; eventos = eventos.filter(x => x.id !== id); localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); toast('🗑 Eliminado'); if (fromList) initEventosScreen(); else renderHome(); await db_deleteEvento(id); }
 
 // ------- EXPORTAR -------
