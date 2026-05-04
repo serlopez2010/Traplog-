@@ -394,8 +394,102 @@ function renderHome() {
   if (!pendientes.length) { pendSection.style.display = 'none'; return; }
   pendSection.style.display = 'block';
   document.getElementById('pend-section-label').textContent = `PENDIENTES (${pendientes.length})`;
-  // Aquí iría la lógica de tarjetas compactas de pendientes (optimizada para el próximo paso)
-  document.getElementById('pend-cards-list').innerHTML = '<div style="color:var(--text2);font-size:12px;padding:10px">Pendientes en migración...</div>';
+    // Renderizar tarjetas pendientes usando el nuevo módulo
+  renderPendientes();
+}
+  
+  // ------- RENDERIZADO DE PENDIENTES (Módulo Home) -------
+function renderPendientes() {
+  const { dia, turno } = TrapUtils.nowTurno();
+  const idxActual = TrapUtils.turnoIndex(dia, turno);
+
+  const pendientes = eventos.filter(e => {
+    if (e.fecha_fabrica === dia && e.turno === turno) return false;
+    if (e.estado === 'Cerrado') return false;
+    // Reglas de negocio de las tarjetas
+    if (e.impacto === 'parada' && e.estado === 'Abierto') return true;
+    if (e.tipo_evento === 'Parámetros') { const diff = idxActual - TrapUtils.turnoIndex(e.fecha_fabrica, e.turno); return diff >= 1 && diff <= 2; }
+    if (e.impacto === 'sin-parada' && e.estado === 'Oportunamente') return true;
+    return false;
+  });
+
+  const pendSection = document.getElementById('pend-section');
+  if (!pendientes.length) { pendSection.style.display = 'none'; return; }
+  
+  pendSection.style.display = 'block';
+  document.getElementById('pend-section-label').textContent = `PENDIENTES (${pendientes.length})`;
+
+  const canEdit = currentUser?.role !== 'viewer';
+  
+  // Ordenar: Paradas abiertas primero, luego Sin parada, luego Parámetros
+  const orden = e => e.impacto === 'parada' ? 0 : e.tipo_evento === 'Parámetros' ? 2 : 1;
+  const pendOrdenados = [...pendientes].sort((a, b) => orden(a) - orden(b));
+
+  document.getElementById('pend-cards-list').innerHTML = pendOrdenados.map(e => {
+    const ti = TrapUtils.fmtHora(e.inicio_evento);
+    const idxEv = TrapUtils.turnoIndex(e.fecha_fabrica, e.turno);
+    const turnosPasados = idxActual - idxEv;
+
+    // 1. TARJETA GRANDE: Paradas Abiertas
+    if (e.impacto === 'parada' && e.estado === 'Abierto') {
+      const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id})">⏹ CERRAR</button>` : '';
+      return `<div class="event-card parada" style="border-left:4px solid var(--danger);border:1px solid rgba(255,23,68,.4)">
+        <div class="event-header"><div>
+          <div class="event-linea">${lineaBadge(e.linea)}<span style="color:var(--text2);font-size:10px">${e.fecha_fabrica} · ${e.turno||''}</span></div>
+          <div class="event-equipo">${e.equipo}</div>
+          <div class="event-comp">${e.componente||''} · ${e.tipo_evento||''}</div>
+        </div><div class="event-time">${ti} →<div class="event-dur" style="color:var(--danger)">ABIERTA</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn)">${turnosPasados} turno(s)</div></div></div>
+        <div class="event-desc">${e.descripcion}</div>
+        <div class="event-footer"><span class="badge badge-danger">🛑 PARADA ABIERTA</span>
+        <div class="event-actions">${cb}</div></div>
+      </div>`;
+    }
+
+    // 2. TARJETA COMPACTA: Parámetros u Oportunamente
+    const isParam = e.tipo_evento === 'Parámetros';
+    const borderColor = isParam ? 'var(--accent)' : 'var(--ok)';
+    const badgeColor = isParam ? 'badge-blue' : 'badge-ok';
+    const badgeIcon = isParam ? '📊 PARÁMETROS' : '⚙️ SIN PARADA';
+    const resto = isParam ? `(${2 - turnosPasados + 1} turno(s) restante)` : '';
+    const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id});event.stopPropagation()">✏️</button>` : '';
+    const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});event.stopPropagation()">✓ OK</button>` : '';
+    
+    // Botón mágico: Cierra el pendiente y abre el wizard pre-cargado
+    const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">✔ CERRAR + INTERVENIR</button>` : '';
+
+    return `<div class="compact-card" style="border-left-color:${borderColor}" onclick="toggleCompact(this)">
+      <div class="compact-row">
+        ${lineaBadge(e.linea)}
+        <strong style="font-size:12px">${e.equipo}</strong>
+        <span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span>
+        <span class="compact-expand-hint">▼ ${e.fecha_fabrica} ${resto}</span>
+      </div>
+      <div class="compact-desc">${e.descripcion}</div>
+      <div class="compact-body">
+        <div style="font-size:12px;color:var(--text2);margin:8px 0;line-height:1.5">${e.descripcion}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:5px"><span class="badge ${badgeColor}">${badgeIcon}</span><span class="badge badge-blue">${e.sector||''}</span></div>
+          <div class="event-actions" style="flex-wrap:wrap;gap:4px">${cib}${cb}${eb}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+  // ------- CERRAR PENDIENTE E INICIAR NUEVO EVENTO -------
+function cerrarYNuevo(id) {
+  if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show');
+  const e = eventos.find(x => x.id === id);
+  if (!e) return;
+  closeEvent(id); // Cierra el pendiente en el fondo
+  
+  // Pre-carga datos para el nuevo wizard
+  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector };
+  TrapWizard.init(); // Reinicia el paso visual
+  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector }; // Mantiene la precarga
+  showScreen('wizard');
+  toast('✅ Pendiente cerrado — Completá el nuevo evento');
 }
 
 // ------- TARJETA UNIVERSAL DE EVENTOS -------
