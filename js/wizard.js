@@ -169,7 +169,7 @@ const TrapWizard = (function() {
     // REGLA DE NEGOCIO CORREGIDA: 
     // Una Falla Física en Trapiche solo puede ser de sectores propios de la línea.
     // Si se paró por Caldera/Usina/Fábrica, es una Parada Operativa, no Falla Física.
-    const sectores = ['Mecánica', 'Trapiches', 'Electrónico', 'Lubricación'];
+    const sectores = ['Mecánica', 'Trapiches', 'Electrónico', 'Lubricación', 'Electrico'];
     const tipos = ['Rotura', 'Mantenimiento'];
     return `
       <div class="section-label">SECTOR RESPONSABLE</div>
