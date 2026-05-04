@@ -8,13 +8,13 @@ const TrapWizard = (function() {
 
   // Definición de los pasos y su orden lógico
   const STEPS = {
-    impacto: { title: 'PASO 1 — ¿PARA LA PRODUCCIÓN?', next: 'sector-tipo' },
-    'sector-tipo': { title: 'PASO 2 — SECTOR Y TIPO', next: 'linea' },
-    motivo: { title: 'PASO 2 — MOTIVO DE LA PARADA', next: 'linea' },
-    identificacion: { title: 'PASO 3 — IDENTIFICACIÓN', next: 'tiempos' },
-    linea: { title: 'PASO 3 — LÍNEA / TRAPICHE', next: 'identificacion' },
-    tiempos: { title: 'PASO 4 — DESCRIPCIÓN Y TIEMPOS', next: 'resumen' },
-    resumen: { title: 'PASO 5 — CONFIRMAR', next: null }
+    impacto: { title: '🛑 PASO 1 — ¿PARA LA PRODUCCIÓN?', next: 'sector-tipo' },
+    'sector-tipo': { title: '🔧 PASO 2 — SECTOR Y TIPO', next: 'linea' },
+    motivo: { title: '👷 PASO 2 — MOTIVO DE LA PARADA', next: 'linea' },
+    identificacion: { title: '⚙️ PASO 3 — IDENTIFICACIÓN', next: 'tiempos' },
+    linea: { title: '📍 PASO 3 — LÍNEA / TRAPICHE', next: 'identificacion' },
+    tiempos: { title: '🕒 PASO 4 — DESCRIPCIÓN Y TIEMPOS', next: 'resumen' },
+    resumen: { title: '📋 PASO 5 — CONFIRMAR', next: null }
   };
 
   function init() {
