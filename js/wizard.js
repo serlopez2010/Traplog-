@@ -50,11 +50,12 @@ const TrapWizard = (function() {
 
     if (currentStepId === 'impacto') {
       if (ev.origen === 'Operativo') {
-        nextStep = ev.impacto === 'parada' ? 'motivo' : 'identificacion';
+        // Siempre pregunta la línea primero, sea parada o sin parada
+        nextStep = ev.impacto === 'parada' ? 'motivo' : 'linea'; 
       } else { // Falla Física
         nextStep = 'sector-tipo';
       }
-    } 
+    }
     else if (currentStepId === 'linea') {
       if (ev.origen === 'Operativo' || (ev.origen === 'Falla Física' && ev.sector !== 'Trapiches')) {
         nextStep = 'tiempos'; // Saltamos equipo/componente si no es falla en trapiche
@@ -165,7 +166,10 @@ const TrapWizard = (function() {
   }
 
   function htmlSectorTipo() {
-    const sectores = ['Mecánica', 'Trapiches', 'Usina', 'Electrónico', 'Caldera', 'Fábrica', 'Lubricación', 'Caña'];
+    // REGLA DE NEGOCIO CORREGIDA: 
+    // Una Falla Física en Trapiche solo puede ser de sectores propios de la línea.
+    // Si se paró por Caldera/Usina/Fábrica, es una Parada Operativa, no Falla Física.
+    const sectores = ['Mecánica', 'Trapiches', 'Electrónico', 'Lubricación'];
     const tipos = ['Rotura', 'Mantenimiento'];
     return `
       <div class="section-label">SECTOR RESPONSABLE</div>
