@@ -57,8 +57,10 @@ const TrapWizard = (function() {
       }
     }
     else if (currentStepId === 'linea') {
-      if (ev.origen === 'Operativo' || (ev.origen === 'Falla Física' && ev.sector !== 'Trapiches')) {
-        nextStep = 'tiempos'; // Saltamos equipo/componente si no es falla en trapiche
+      // Solo saltamos equipo si es una PARADA OPERATIVA. 
+      // Las fallas físicas y los ajustes (sin parada) SIEMPRE preguntan equipo.
+      if (ev.origen === 'Operativo' && ev.impacto === 'parada') {
+        nextStep = 'tiempos'; 
       } else {
         nextStep = 'identificacion';
       }
