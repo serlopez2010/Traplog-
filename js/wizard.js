@@ -181,7 +181,7 @@ const TrapWizard = (function() {
   }
 
   function htmlMotivo() {
-    const motivos = ['Fábrica', 'Caldera', 'Caña', 'Eléctrico general', 'Orden de coordinador', 'Orden superior', 'Otro'];
+    const motivos = ['Fábrica', 'Caldera', 'Trapiche', 'Caña', 'Eléctrico general', 'Orden de coordinador', 'Orden superior', 'Otro'];
     return `
       <div class="choice-grid cols-2">${motivos.map(m => `<div class="choice-card" onclick="TrapWizard.selMotivo('${m}', this)"><span class="choice-icon">🏭</span><div class="choice-title">${m.toUpperCase()}</div></div>`).join('')}</div>
       <div class="field-group" id="motivo-otro-wrap" style="display:${ev.motivo==='Otro'?'block':'none'};margin-top:10px"><label>ESPECIFICAR MOTIVO</label><input type="text" id="inp-motivo" placeholder="Describir..." oninput="TrapWizard.ev.motivo=this.value"></div>`;
