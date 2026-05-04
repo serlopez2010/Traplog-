@@ -136,7 +136,7 @@ const TrapWizard = (function() {
     }
   }
 
-  function selCard(group, val, el) {
+  function sel(group, val, el) {
     ev[group] = val;
     el.parentElement.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected', 'sel-danger', 'sel-ok'));
     el.classList.add('selected');
