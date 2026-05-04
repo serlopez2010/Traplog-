@@ -81,13 +81,20 @@ const TrapWizard = (function() {
     render();
   }
 
-  function validate() {
+    function validate() {
     if (currentStepId === 'impacto' && (!ev.impacto || !ev.origen)) { toast('⚠️ Completá Impacto y Origen'); return false; }
     if (currentStepId === 'sector-tipo' && (!ev.sector || !ev.tipo)) { toast('⚠️ Completá Sector y Tipo'); return false; }
     if (currentStepId === 'motivo' && !ev.motivo) { toast('⚠️ Seleccioná un Motivo'); return false; }
     if (currentStepId === 'linea' && !ev.linea) { toast('⚠️ Seleccioná la Línea'); return false; }
     if (currentStepId === 'identificacion' && (!ev.equipo)) { toast('⚠️ Seleccioná el Equipo'); return false; }
-    if (currentStepId === 'tiempos' && !ev.descripcion) { toast('⚠️ Escribí una descripción'); return false; }
+    
+    // LA SOLUCIÓN: Leemos directamente lo que haya escrito en la pantalla en este momento preciso
+    if (currentStepId === 'tiempos') {
+      const textoEscrito = document.getElementById('wiz-desc')?.value.trim();
+      ev.descripcion = textoEscrito; // Lo guardamos en la variable
+      if (!textoEscrito) { toast('⚠️ Escribí una descripción'); return false; }
+    }
+    
     return true;
   }
 
