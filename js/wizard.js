@@ -162,7 +162,7 @@ const TrapWizard = (function() {
       </div>
       <div class="section-label">ORIGEN DEL EVENTO</div>
       <div class="choice-grid">
-        <div class="choice-card" onclick="TrapWizard.sel('origen','Operativo',this)"><span class="choice-icon">👷</span><div class="choice-title">ORDEN OPERATIVA</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('origen','Operativo',this)"><span class="choice-icon">👷</span><div class="choice-title">OPERATIVA</div></div>
         <div class="choice-card" onclick="TrapWizard.sel('origen','Falla Física',this)"><span class="choice-icon">🔧</span><div class="choice-title">FALLA FÍSICA</div></div>
       </div>`;
   }
