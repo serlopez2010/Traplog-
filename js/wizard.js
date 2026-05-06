@@ -3,10 +3,9 @@
  * Gestiona el flujo dinámico de creación de eventos.
  */
 const TrapWizard = (function() {
-  let ev = {}; // Almacena las selecciones del usuario temporalmente
-  let currentStepId = 'impacto'; // Identificador del paso actual
+  let ev = {}; 
+  let currentStepId = 'impacto'; 
 
-  // Definición de los pasos y su orden lógico
   const STEPS = {
     impacto: { title: '🛑 PASO 1 — ¿PARA LA PRODUCCIÓN?', next: 'sector-tipo' },
     'sector-tipo': { title: '🔧 PASO 2 — SECTOR Y TIPO', next: 'linea' },
@@ -27,13 +26,11 @@ const TrapWizard = (function() {
     const container = document.getElementById('wizard-content');
     if (!container) return;
     
-    // Actualizamos título y botones
     document.getElementById('wizard-title').textContent = STEPS[currentStepId].title;
     document.getElementById('wizard-back').style.display = currentStepId === 'impacto' ? 'none' : '';
-    document.getElementById('wizard-next').textContent = currentStepId === 'resumen' ? '✔ GUARDAR' : 'CONTINUAR →';
+    document.getElementById('wizard-next').textContent = currentStepId === 'resumen' ? '✔ GUARDAR' : '⏭️ CONTINUAR';
     document.getElementById('wizard-next').className = currentStepId === 'resumen' ? 'btn btn-ok' : 'btn btn-primary';
 
-    // Inyectamos el HTML del paso correspondiente
     container.innerHTML = getStepHTML(currentStepId);
   }
 
@@ -45,20 +42,16 @@ const TrapWizard = (function() {
       return;
     }
 
-    // LÓGICA DEL EMBUDO: Decidir cuál es el próximo paso real
     let nextStep = STEPS[currentStepId].next;
 
     if (currentStepId === 'impacto') {
       if (ev.origen === 'Operativo') {
-        // Siempre pregunta la línea primero, sea parada o sin parada
         nextStep = ev.impacto === 'parada' ? 'motivo' : 'linea'; 
-      } else { // Falla Física
+      } else { 
         nextStep = 'sector-tipo';
       }
-    }
+    } 
     else if (currentStepId === 'linea') {
-      // Solo saltamos equipo si es una PARADA OPERATIVA. 
-      // Las fallas físicas y los ajustes (sin parada) SIEMPRE preguntan equipo.
       if (ev.origen === 'Operativo' && ev.impacto === 'parada') {
         nextStep = 'tiempos'; 
       } else {
@@ -68,12 +61,10 @@ const TrapWizard = (function() {
 
     currentStepId = nextStep;
     render();
-    // Scroll al inicio del wizard
     document.getElementById('screen-wizard').scrollTo(0,0);
   }
 
   function back() {
-    // Lógica para ir hacia atrás (simplificada, vuelve al inicio si se corta)
     if (currentStepId === 'motivo') currentStepId = 'impacto';
     else if (currentStepId === 'linea') currentStepId = ev.origen === 'Operativo' ? 'motivo' : 'sector-tipo';
     else if (currentStepId === 'identificacion') currentStepId = 'linea';
@@ -84,17 +75,16 @@ const TrapWizard = (function() {
     render();
   }
 
-    function validate() {
+  function validate() {
     if (currentStepId === 'impacto' && (!ev.impacto || !ev.origen)) { toast('⚠️ Completá Impacto y Origen'); return false; }
     if (currentStepId === 'sector-tipo' && (!ev.sector || !ev.tipo)) { toast('⚠️ Completá Sector y Tipo'); return false; }
     if (currentStepId === 'motivo' && !ev.motivo) { toast('⚠️ Seleccioná un Motivo'); return false; }
     if (currentStepId === 'linea' && !ev.linea) { toast('⚠️ Seleccioná la Línea'); return false; }
     if (currentStepId === 'identificacion' && (!ev.equipo)) { toast('⚠️ Seleccioná el Equipo'); return false; }
     
-    // LA SOLUCIÓN: Leemos directamente lo que haya escrito en la pantalla en este momento preciso
     if (currentStepId === 'tiempos') {
       const textoEscrito = document.getElementById('wiz-desc')?.value.trim();
-      ev.descripcion = textoEscrito; // Lo guardamos en la variable
+      ev.descripcion = textoEscrito; 
       if (!textoEscrito) { toast('⚠️ Escribí una descripción'); return false; }
     }
     
@@ -127,7 +117,7 @@ const TrapWizard = (function() {
     eventos.push(saved);
     localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
     toast('✅ Evento registrado');
-    db_saveEvento(saved); // Background sync
+    db_saveEvento(saved); 
     showScreen('home');
   }
 
@@ -157,33 +147,48 @@ const TrapWizard = (function() {
   function htmlImpacto() {
     return `
       <div class="choice-grid">
-        <div class="choice-card" onclick="TrapWizard.sel('impacto','parada',this)"><span class="choice-icon">🛑</span><div class="choice-title">PARADA DE PRODUCCIÓN</div></div>
-        <div class="choice-card" onclick="TrapWizard.sel('impacto','sin-parada',this)"><span class="choice-icon">⚙️</span><div class="choice-title">SIN PARADA</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('impacto','parada',this)"><span class="choice-icon">🛑</span><div class="choice-title">PARADA DE PRODUCCIÓN</div><div class="choice-desc">La línea se detuvo</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('impacto','sin-parada',this)"><span class="choice-icon">⚙️</span><div class="choice-title">SIN PARADA</div><div class="choice-desc">La línea sigue operando</div></div>
       </div>
       <div class="section-label">ORIGEN DEL EVENTO</div>
       <div class="choice-grid">
-        <div class="choice-card" onclick="TrapWizard.sel('origen','Operativo',this)"><span class="choice-icon">👷</span><div class="choice-title">OPERATIVA</div></div>
-        <div class="choice-card" onclick="TrapWizard.sel('origen','Falla Física',this)"><span class="choice-icon">🔧</span><div class="choice-title">FALLA FÍSICA</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('origen','Operativo',this)"><span class="choice-icon">👷</span><div class="choice-title">ORDEN OPERATIVA</div><div class="choice-desc">Decisión del equipo</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('origen','Falla Física',this)"><span class="choice-icon">🔧</span><div class="choice-title">FALLA FÍSICA</div><div class="choice-desc">Problema en maquinaria</div></div>
       </div>`;
   }
 
   function htmlSectorTipo() {
-    // REGLA DE NEGOCIO CORREGIDA: 
-    // Una Falla Física en Trapiche solo puede ser de sectores propios de la línea.
-    // Si se paró por Caldera/Usina/Fábrica, es una Parada Operativa, no Falla Física.
-    const sectores = ['Mecánica', 'Trapiches', 'Electrónico', 'Lubricación', 'Electrico'];
-    const tipos = ['Rotura', 'Mantenimiento'];
+    const sectores = [
+      { nombre: 'Mecánica', icono: '🔩' },
+      { nombre: 'Trapiches', icono: '⚙️' },
+      { nombre: 'Electrónico', icono: '⚡' },
+      { nombre: 'Lubricación', icono: '💧' }
+    ];
+    const tipos = [
+      { nombre: 'Rotura', icono: '💥' },
+      { nombre: 'Mantenimiento', icono: '🛠️' }
+    ];
+    
     return `
       <div class="section-label">SECTOR RESPONSABLE</div>
-      <div class="choice-grid cols-3">${sectores.map(s => `<div class="choice-card" onclick="TrapWizard.sel('sector','${s}',this)"><span class="choice-icon">🔩</span><div class="choice-title">${s.toUpperCase()}</div></div>`).join('')}</div>
+      <div class="choice-grid cols-3">${sectores.map(s => `<div class="choice-card" onclick="TrapWizard.sel('sector','${s.nombre}',this)"><span class="choice-icon">${s.icono}</span><div class="choice-title">${s.nombre.toUpperCase()}</div></div>`).join('')}</div>
       <div class="section-label">TIPO DE PROBLEMA</div>
-      <div class="choice-grid">${tipos.map(t => `<div class="choice-card" onclick="TrapWizard.sel('tipo','${t}',this)"><span class="choice-icon">💥</span><div class="choice-title">${t.toUpperCase()}</div></div>`).join('')}</div>`;
+      <div class="choice-grid">${tipos.map(t => `<div class="choice-card" onclick="TrapWizard.sel('tipo','${t.nombre}',this)"><span class="choice-icon">${t.icono}</span><div class="choice-title">${t.nombre.toUpperCase()}</div></div>`).join('')}</div>`;
   }
 
   function htmlMotivo() {
-    const motivos = ['Fábrica', 'Caldera', 'Trapiche', 'Caña', 'Eléctrico general', 'Orden de coordinador', 'Orden superior', 'Otro'];
+    const motivos = [
+      { nombre: 'Fábrica', icono: '🏭', desc: 'Lleno de jugo o mieles' },
+      { nombre: 'Caldera', icono: '🔥', desc: 'Falta de vapor' },
+      { nombre: 'Caña', icono: '🌿', desc: 'Falta de materia prima' },
+      { nombre: 'Eléctrico general', icono: '⚡', desc: 'Corte o subestación' },
+      { nombre: 'Orden de coordinador', icono: '👷', desc: 'Orden del coordinador' },
+      { nombre: 'Orden superior', icono: '👔', desc: 'Jefe, gerente o director' },
+      { nombre: 'Otro', icono: '✏️', desc: '' }
+    ];
+    
     return `
-      <div class="choice-grid cols-2">${motivos.map(m => `<div class="choice-card" onclick="TrapWizard.selMotivo('${m}', this)"><span class="choice-icon">🏭</span><div class="choice-title">${m.toUpperCase()}</div></div>`).join('')}</div>
+      <div class="choice-grid cols-2">${motivos.map(m => `<div class="choice-card" onclick="TrapWizard.selMotivo('${m.nombre}', this)"><span class="choice-icon">${m.icono}</span><div class="choice-title">${m.nombre.toUpperCase()}</div>${m.desc ? `<div class="choice-desc">${m.desc}</div>` : ''}</div>`).join('')}</div>
       <div class="field-group" id="motivo-otro-wrap" style="display:${ev.motivo==='Otro'?'block':'none'};margin-top:10px"><label>ESPECIFICAR MOTIVO</label><input type="text" id="inp-motivo" placeholder="Describir..." oninput="TrapWizard.ev.motivo=this.value"></div>`;
   }
 
@@ -220,13 +225,37 @@ const TrapWizard = (function() {
 
   function htmlTiempos() {
     const mostrarFin = ev.impacto === 'parada';
+    const inputHiddenStyle = "display:none;visibility:hidden;width:0;height:0;position:absolute;";
+
     return `
-      <div class="field-group"><label>DESCRIPCIÓN</label><textarea id="wiz-desc" placeholder="Detalle lo ocurrido..." style="min-height:80px" oninput="TrapWizard.ev.descripcion=this.value">${ev.descripcion||''}</textarea></div>
+      <div class="field-group"><label>DESCRIPCIÓN</label><textarea id="wiz-desc" placeholder="Detalle lo ocurrido..." style="min-height:80px">${ev.descripcion||''}</textarea></div>
+      
       <div class="section-label">INICIO DEL EVENTO</div>
-      <button class="btn btn-secondary" onclick="TrapWizard.setNow('inicio_evento')" style="width:100%">🕒 REGISTRAR HORA AHORA: <span id="wiz-time-ini">${TrapUtils.fmtHora(ev.inicio_evento) !== '—' ? TrapUtils.fmtHora(ev.inicio_evento) : '--- : ---'}</span></button>
+      <div class="time-card" id="time-card-ini"
+        onclick="TrapWizard.tapTiempo('inicio')"
+        oncontextmenu="TrapWizard.openNativePicker('inicio');event.preventDefault()"
+        onmousedown="TrapWizard.startLongPress('inicio')" onmouseup="TrapWizard.cancelLongPress()" onmouseleave="TrapWizard.cancelLongPress()"
+        ontouchstart="TrapWizard.startLongPress('inicio')" ontouchend="TrapWizard.cancelLongPress()" ontouchmove="TrapWizard.cancelLongPress()">
+        <div class="time-card-label">TOQUE PARA REGISTRAR AHORA</div>
+        <div class="time-card-val" id="wiz-time-ini-display">— : —</div>
+        <div class="time-card-hint">mantené presionado para elegir hora ✏️</div>
+        <button class="time-card-edit" onclick="TrapWizard.openNativePicker('inicio');event.stopPropagation()">✏️</button>
+      </div>
+      <input type="datetime-local" id="wiz-ini" style="${inputHiddenStyle}" onchange="TrapWizard.onPickerChange('inicio')">
+
       ${mostrarFin ? `
-        <div class="section-label" style="margin-top:15px">FIN DEL EVENTO (Dejar vacío = Parada en curso)</div>
-        <button class="btn btn-secondary" onclick="TrapWizard.setNow('fin_evento')" style="width:100%">🕒 REGISTRAR HORA AHORA: <span id="wiz-time-fin">${TrapUtils.fmtHora(ev.fin_evento) !== '—' ? TrapUtils.fmtHora(ev.fin_evento) : '--- : ---'}</span></button>
+      <div class="section-label" style="margin-top:15px">FIN DEL EVENTO</div>
+      <div class="time-card fin" id="time-card-fin"
+        onclick="TrapWizard.tapTiempo('fin')"
+        oncontextmenu="TrapWizard.openNativePicker('fin');event.preventDefault()"
+        onmousedown="TrapWizard.startLongPress('fin')" onmouseup="TrapWizard.cancelLongPress()" onmouseleave="TrapWizard.cancelLongPress()"
+        ontouchstart="TrapWizard.startLongPress('fin')" ontouchend="TrapWizard.cancelLongPress()" ontouchmove="TrapWizard.cancelLongPress()">
+        <div class="time-card-label">TOQUE PARA REGISTRAR AHORA</div>
+        <div class="time-card-val fin" id="wiz-time-fin-display">— : —</div>
+        <div class="time-card-hint">mantené presionado para elegir hora ✏️</div>
+        <button class="time-card-edit fin" onclick="TrapWizard.openNativePicker('fin');event.stopPropagation()">✏️</button>
+      </div>
+      <input type="datetime-local" id="wiz-fin" style="${inputHiddenStyle}" onchange="TrapWizard.onPickerChange('fin')">
       ` : ''}`;
   }
 
@@ -261,7 +290,7 @@ const TrapWizard = (function() {
 
   function onEqChange(val) {
     ev.equipo = val;
-    ev.componente = ''; // Reset componente al cambiar equipo
+    ev.componente = ''; 
     const wrap = document.getElementById('wiz-comp-wrap');
     if (!wrap) return;
     if (!val) { wrap.style.display = 'none'; return; }
@@ -280,5 +309,76 @@ const TrapWizard = (function() {
     if (span) span.textContent = TrapUtils.fmtHora(localISO);
   }
 
-  return { init, next, back, render, sel, selMotivo, onEqChange, setNow, ev };
+  // --- LÓGICA DE TIEMPOS (Toque rápido vs Click largo) ---
+  let longPressTimer = null;
+  let longPressFired = false;
+
+  function tapTiempo(tipo) {
+    cancelLongPress();
+    if (longPressFired) return; // Si fue long press, ya se manejó
+    setTiempoAhora(tipo);
+  }
+
+  function startLongPress(tipo) {
+    longPressFired = false;
+    longPressTimer = setTimeout(() => {
+      longPressFired = true;
+      longPressTimer = null;
+      openNativePicker(tipo);
+    }, 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  }
+
+  function setTiempoAhora(tipo) {
+    const now = new Date();
+    const localISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    const fmt = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    
+    const key = tipo === 'inicio' ? 'inicio_evento' : 'fin_evento';
+    ev[key] = localISO;
+    
+    const displayId = tipo === 'inicio' ? 'wiz-time-ini-display' : 'wiz-time-fin-display';
+    const cardId = tipo === 'inicio' ? 'time-card-ini' : 'time-card-fin';
+    const inputId = tipo === 'inicio' ? 'wiz-ini' : 'wiz-fin';
+    
+    document.getElementById(displayId).textContent = fmt;
+    document.getElementById(cardId).classList.add('registered');
+    document.getElementById(inputId).value = localISO;
+  }
+
+  function openNativePicker(tipo) {
+    const inputId = tipo === 'inicio' ? 'wiz-ini' : 'wiz-fin';
+    const inp = document.getElementById(inputId);
+    
+    // Si está vacío, le ponemos la hora actual para que el calendario abra en el día de hoy
+    if (!inp.value) {
+      const now = new Date();
+      inp.value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    }
+    
+    // Intentamos abrir el selector nativo del sistema
+    try { inp.showPicker(); } catch(e) { inp.click(); }
+  }
+
+  function onPickerChange(tipo) {
+    const inputId = tipo === 'inicio' ? 'wiz-ini' : 'wiz-fin';
+    const displayId = tipo === 'inicio' ? 'wiz-time-ini-display' : 'wiz-time-fin-display';
+    const cardId = tipo === 'inicio' ? 'time-card-ini' : 'time-card-fin';
+    const val = document.getElementById(inputId).value;
+    
+    if (!val) return;
+    const d = new Date(val);
+    const fmt = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    
+    const key = tipo === 'inicio' ? 'inicio_evento' : 'fin_evento';
+    ev[key] = val;
+    
+    document.getElementById(displayId).textContent = fmt;
+    document.getElementById(cardId).classList.add('registered');
+  }
+
+return { init, next, back, render, sel, selMotivo, onEqChange, setNow, ev, tapTiempo, startLongPress, cancelLongPress, openNativePicker, onPickerChange };
 })();
