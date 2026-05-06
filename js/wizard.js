@@ -1,19 +1,20 @@
 /**
  * TRAPLOG - MÓDULO WIZARD INTELIGENTE (wizard.js)
- * Gestiona el flujo dinámico de creación de eventos.
  */
 const TrapWizard = (function() {
   let ev = {}; 
   let currentStepId = 'impacto'; 
+  let longPressTimer = null;
+  let longPressFired = false;
 
   const STEPS = {
-    impacto: { title: '🛑 PASO 1 — ¿PARA LA PRODUCCIÓN?', next: 'sector-tipo' },
-    'sector-tipo': { title: '🔧 PASO 2 — SECTOR Y TIPO', next: 'linea' },
-    motivo: { title: '👷 PASO 2 — MOTIVO DE LA PARADA', next: 'linea' },
-    identificacion: { title: '⚙️ PASO 3 — IDENTIFICACIÓN', next: 'tiempos' },
-    linea: { title: '📍 PASO 3 — LÍNEA / TRAPICHE', next: 'identificacion' },
-    tiempos: { title: '🕒 PASO 4 — DESCRIPCIÓN Y TIEMPOS', next: 'resumen' },
-    resumen: { title: '📋 PASO 5 — CONFIRMAR', next: null }
+    impacto: { title: 'PASO 1 — ¿PARA LA PRODUCCIÓN?', next: 'sector-tipo' },
+    'sector-tipo': { title: 'PASO 2 — SECTOR Y TIPO', next: 'linea' },
+    motivo: { title: 'PASO 2 — MOTIVO DE LA PARADA', next: 'linea' },
+    identificacion: { title: 'PASO 3 — IDENTIFICACIÓN', next: 'tiempos' },
+    linea: { title: 'PASO 3 — LÍNEA / TRAPICHE', next: 'identificacion' },
+    tiempos: { title: 'PASO 4 — DESCRIPCIÓN Y TIEMPOS', next: 'resumen' },
+    resumen: { title: 'PASO 5 — CONFIRMAR', next: null }
   };
 
   function init() {
@@ -28,7 +29,7 @@ const TrapWizard = (function() {
     
     document.getElementById('wizard-title').textContent = STEPS[currentStepId].title;
     document.getElementById('wizard-back').style.display = currentStepId === 'impacto' ? 'none' : '';
-    document.getElementById('wizard-next').textContent = currentStepId === 'resumen' ? '✔ GUARDAR' : '⏭️ CONTINUAR';
+    document.getElementById('wizard-next').textContent = currentStepId === 'resumen' ? '✔ GUARDAR' : 'CONTINUAR';
     document.getElementById('wizard-next').className = currentStepId === 'resumen' ? 'btn btn-ok' : 'btn btn-primary';
 
     container.innerHTML = getStepHTML(currentStepId);
@@ -238,7 +239,7 @@ const TrapWizard = (function() {
         ontouchstart="TrapWizard.startLongPress('inicio')" ontouchend="TrapWizard.cancelLongPress()" ontouchmove="TrapWizard.cancelLongPress()">
         <div class="time-card-label">TOQUE PARA REGISTRAR AHORA</div>
         <div class="time-card-val" id="wiz-time-ini-display">— : —</div>
-        <div class="time-card-hint">mantené presionado para elegir hora ✏️</div>
+        <div class="time-card-hint">mantené presionado para elegir hora</div>
         <button class="time-card-edit" onclick="TrapWizard.openNativePicker('inicio');event.stopPropagation()">✏️</button>
       </div>
       <input type="datetime-local" id="wiz-ini" style="${inputHiddenStyle}" onchange="TrapWizard.onPickerChange('inicio')">
@@ -252,7 +253,7 @@ const TrapWizard = (function() {
         ontouchstart="TrapWizard.startLongPress('fin')" ontouchend="TrapWizard.cancelLongPress()" ontouchmove="TrapWizard.cancelLongPress()">
         <div class="time-card-label">TOQUE PARA REGISTRAR AHORA</div>
         <div class="time-card-val fin" id="wiz-time-fin-display">— : —</div>
-        <div class="time-card-hint">mantené presionado para elegir hora ✏️</div>
+        <div class="time-card-hint">mantené presionado para elegir hora</div>
         <button class="time-card-edit fin" onclick="TrapWizard.openNativePicker('fin');event.stopPropagation()">✏️</button>
       </div>
       <input type="datetime-local" id="wiz-fin" style="${inputHiddenStyle}" onchange="TrapWizard.onPickerChange('fin')">
@@ -261,11 +262,11 @@ const TrapWizard = (function() {
 
   function htmlResumen() {
     ev.descripcion = document.getElementById('wiz-desc')?.value || ev.descripcion;
-    const estadoStr = (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">🔴 ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : '<span style="color:var(--ok)">✅ CERRADO</span>';
+    const estadoStr = (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : '<span style="color:var(--ok)">CERRADO</span>';
     
     return `
       <div class="hl-box">
-        <div class="hl-row"><span class="hl-key">IMPACTO</span><span class="hl-val">${ev.impacto === 'parada' ? '🛑 PARADA' : '⚙️ SIN PARADA'}</span></div>
+        <div class="hl-row"><span class="hl-key">IMPACTO</span><span class="hl-val">${ev.impacto === 'parada' ? 'PARADA' : 'SIN PARADA'}</span></div>
         <hr style="border:none;border-top:1px solid var(--border);margin:5px 0">
         <div class="hl-row"><span class="hl-key">LÍNEA</span><span class="hl-val" style="color:${lineaColor(ev.linea)};font-weight:700">${ev.linea||'—'}</span></div>
         <div class="hl-row"><span class="hl-key">EQUIPO</span><span class="hl-val">${ev.equipo || ev.motivo || '—'}</span></div>
@@ -300,22 +301,10 @@ const TrapWizard = (function() {
     sel.innerHTML = '<option value="">— Seleccionar —</option>' + comps.map(c => `<option value="${c}">${c}</option>`).join('');
   }
 
-  function setNow(key) {
-    const now = new Date();
-    const localISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    ev[key] = localISO;
-    const spanId = key === 'inicio_evento' ? 'wiz-time-ini' : 'wiz-time-fin';
-    const span = document.getElementById(spanId);
-    if (span) span.textContent = TrapUtils.fmtHora(localISO);
-  }
-
   // --- LÓGICA DE TIEMPOS (Toque rápido vs Click largo) ---
-  let longPressTimer = null;
-  let longPressFired = false;
-
   function tapTiempo(tipo) {
     cancelLongPress();
-    if (longPressFired) return; // Si fue long press, ya se manejó
+    if (longPressFired) return;
     setTiempoAhora(tipo);
   }
 
@@ -353,13 +342,11 @@ const TrapWizard = (function() {
     const inputId = tipo === 'inicio' ? 'wiz-ini' : 'wiz-fin';
     const inp = document.getElementById(inputId);
     
-    // Si está vacío, le ponemos la hora actual para que el calendario abra en el día de hoy
     if (!inp.value) {
       const now = new Date();
       inp.value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
     }
     
-    // Intentamos abrir el selector nativo del sistema
     try { inp.showPicker(); } catch(e) { inp.click(); }
   }
 
@@ -380,5 +367,8 @@ const TrapWizard = (function() {
     document.getElementById(cardId).classList.add('registered');
   }
 
-return { init, next, back, render, sel, selMotivo, onEqChange, setNow, ev, tapTiempo, startLongPress, cancelLongPress, openNativePicker, onPickerChange };
+  return { 
+    init, next, back, render, sel, selMotivo, onEqChange, ev, 
+    tapTiempo, startLongPress, cancelLongPress, openNativePicker, onPickerChange 
+  };
 })();
