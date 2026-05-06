@@ -15,11 +15,12 @@
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/screens-vitacora.css">
 
-<!-- Carga de Módulos Limpios -->
+<!-- Módulos Limpios -->
 <script src="db.js"></script>
 <script src="js/data.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/wizard.js"></script>
+<script src="js/admin.js"></script>
 </head>
 
 <!-- LOGIN -->
@@ -45,10 +46,10 @@
   </div>
 </div>
 
-<!-- MODAL EDITAR EVENTO (Se refactorizará en el próximo módulo) -->
+<!-- MODAL EDITAR EVENTO -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal-box">
-    <div class="modal-title">✏️ EDITAR EVENTO</div>
+    <div class="modal-title">EDITAR EVENTO</div>
     <input type="hidden" id="edit-id">
     <div class="field-group"><label>LÍNEA</label>
       <select id="edit-linea" onchange="updateEditLinea()">
@@ -81,33 +82,8 @@
   </div>
 </div>
 
-<!-- ZONA DEL WIZARD (Se reemplazará en el Módulo 2) -->
-<div class="wheel-modal" id="wheel-modal" onclick="closeWheelOutside(event)">
-  <div class="wheel-box" id="wheel-box">
-    <div class="wheel-title" id="wheel-title">SELECCIONAR HORA</div>
-    <div style="margin-bottom:14px">
-      <div style="font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:6px;text-align:center">FECHA</div>
-      <input type="date" id="wheel-date-inp" onchange="onWheelDateChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:15px;padding:10px 14px;outline:none;text-align:center;-webkit-appearance:none">
-    </div>
-    <div class="wheel-row">
-      <div class="wheel-col">
-        <div class="wheel-lbl">HORA</div>
-        <div class="wheel-scroll" id="wheel-horas" onscroll="onWheelScroll('horas')"><div class="wheel-highlight"></div></div>
-      </div>
-      <div class="wheel-sep">:</div>
-      <div class="wheel-col">
-        <div class="wheel-lbl">MINUTOS</div>
-        <div class="wheel-scroll" id="wheel-minutos" onscroll="onWheelScroll('minutos')"><div class="wheel-highlight"></div></div>
-      </div>
-    </div>
-    <div class="btn-row" style="margin-top:8px">
-      <button class="btn btn-secondary" onclick="closeWheel()">CANCELAR</button>
-      <button class="btn btn-ok" id="wheel-confirm" onclick="confirmWheel()">✔ CONFIRMAR</button>
-    </div>
-  </div>
-</div>
-
 <div id="app">
+  <!-- HEADER -->
   <div class="header">
     <div class="header-left">
       <div>
@@ -139,17 +115,15 @@
     </div>
   </div>
 
-    <!-- WIZARD INTELIGENTE -->
+  <!-- WIZARD INTELIGENTE -->
   <div class="screen" id="screen-wizard" style="padding-bottom:20px;">
     <div class="section-label" id="wizard-title">PASO 1</div>
-    <div id="wizard-content">
-      <!-- Acá se inyecta la magia -->
-    </div>
+    <div id="wizard-content"></div>
     <div class="btn-row" style="margin-top:20px">
-      <button class="btn btn-secondary" id="wizard-back" onclick="TrapWizard.back()" style="display:none">↩️ ATRÁS</button>
-      <button class="btn btn-primary" id="wizard-next" onclick="TrapWizard.next()">⏭️ CONTINUAR</button>
+      <button class="btn btn-secondary" id="wizard-back" onclick="TrapWizard.back()" style="display:none">ATRAS</button>
+      <button class="btn btn-primary" id="wizard-next" onclick="TrapWizard.next()">CONTINUAR</button>
     </div>
-    <button class="btn btn-secondary" onclick="showScreen('home')" style="margin-top:8px;width:100%">❌ CANCELAR</button>
+    <button class="btn btn-secondary" onclick="showScreen('home')" style="margin-top:8px;width:100%">CANCELAR</button>
   </div>
 
   <!-- EVENTOS -->
@@ -161,7 +135,7 @@
         <div><label style="font-size:9px">HASTA</label><input type="date" id="flt-hasta" oninput="renderEventosFiltrados()" style="font-size:12px;padding:7px 8px"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <div><label style="font-size:9px">LÍNEA</label>
+        <div><label style="font-size:9px">LINEA</label>
           <select id="flt-linea" onchange="renderEventosFiltrados()" style="font-size:12px;padding:7px 8px">
             <option value="">Todas</option>
             <option value="T1" style="color:#1976D2">T1</option>
@@ -172,8 +146,8 @@
         <div><label style="font-size:9px">IMPACTO</label>
           <select id="flt-impacto" onchange="renderEventosFiltrados()" style="font-size:12px;padding:7px 8px">
             <option value="">Todos</option>
-            <option value="parada">🛑 Parada</option>
-            <option value="sin-parada">⚙️ Sin parada</option>
+            <option value="parada">Parada</option>
+            <option value="sin-parada">Sin parada</option>
           </select>
         </div>
       </div>
@@ -184,8 +158,8 @@
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="filtroRapido('hoy')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">HOY</button>
-        <button onclick="filtroRapido('semana')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">7 DÍAS</button>
-        <button onclick="filtroRapido('mes')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">30 DÍAS</button>
+        <button onclick="filtroRapido('semana')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">7 DIAS</button>
+        <button onclick="filtroRapido('mes')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">30 DIAS</button>
         <button onclick="filtroRapido('todo')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">TODO</button>
       </div>
     </div>
@@ -197,9 +171,9 @@
   <div class="screen" id="screen-export">
     <div class="section-label">EXPORTAR DATOS</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px;margin-bottom:14px">
-      <div style="font-weight:600;margin-bottom:6px;font-size:14px">📥 Exportar a CSV</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Columnas idénticas a la hoja <em>EVENTOS</em> de tu planilla.</div>
-      <button class="btn btn-primary" onclick="exportarCSV()" style="margin-top:0">⬇ DESCARGAR CSV</button>
+      <div style="font-weight:600;margin-bottom:6px;font-size:14px">Exportar a CSV</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Columnas idénticas a la hoja EVENTOS de tu planilla.</div>
+      <button class="btn btn-primary" onclick="exportarCSV()" style="margin-top:0">DESCARGAR CSV</button>
     </div>
     <div class="section-label">PENDIENTES DE EXPORTAR</div>
     <div id="export-list"></div>
@@ -207,9 +181,9 @@
 
   <!-- ADMIN -->
   <div class="screen" id="screen-admin">
-    <div class="section-label">GESTIÓN DE USUARIOS</div>
+    <div class="section-label">GESTION DE USUARIOS</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px;margin-bottom:14px">
-      <div style="font-weight:600;margin-bottom:12px;font-size:14px">➕ Nuevo Usuario</div>
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Nuevo Usuario</div>
       <div class="field-group"><label>NOMBRE DE USUARIO</label><input type="text" id="nu-name" placeholder="usuario..."></div>
       <div class="field-group"><label>CONTRASEÑA</label><input type="password" id="nu-pass" placeholder="contraseña..."></div>
       <div class="field-group"><label>ROL</label>
@@ -219,7 +193,7 @@
           <option value="admin">Administrador — acceso total</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="addUser()" style="margin-top:0">CREAR USUARIO</button>
+      <button class="btn btn-primary" onclick="TrapAdmin.addUser()" style="margin-top:0">CREAR USUARIO</button>
     </div>
     <div class="section-label">USUARIOS REGISTRADOS</div>
     <div id="user-list"></div>
@@ -256,19 +230,17 @@
 
 <button class="fab" id="fab" onclick="tryNew()">＋</button>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:72px;left:8px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:rgba(122,156,200,.3);z-index:99;pointer-events:none;letter-spacing:1px">v0.5 (Modular)</div>
 
 <script>
 // ========================================================================
-// TRAPLOG v0.5 - ARQUITECTURA LIMPIA
+// TRAPLOG v0.6 - ARQUITECTURA LIMPIA (Index Principal)
 // ========================================================================
 
 // ------- ESTADO GLOBAL -------
 let eventos = JSON.parse(localStorage.getItem('vitacora_trapiches') || '[]');
-let usuarios = [];
 let currentUser = null;
 
-// ------- HELPERS RÁPIDOS -------
+// ------- HELPERS RAPIDOS -------
 function lineaColor(l) { return TrapData.LINEA_COLOR[l] || '#7a9cc8'; }
 function lineaBadge(l) {
   const c = lineaColor(l);
@@ -277,9 +249,7 @@ function lineaBadge(l) {
 function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
 function abrirDashboard() { window.open('dashboard.html', '_blank'); }
 
-// ------- LOGIN & USERS -------
-function saveUsers(u) { localStorage.setItem('vt_users_cache', JSON.stringify(u)); }
-
+// ------- LOGIN -------
 document.getElementById('btn-login').addEventListener('click', doLogin);
 document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
@@ -296,7 +266,7 @@ async function doLogin() {
     btn.textContent = 'CARGANDO...';
     const evRes = await db_getEventos();
     if (evRes.ok) { eventos = evRes.eventos; localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); }
-    else { toast('⚠️ Sin conexión — usando datos locales'); }
+    else { toast('Sin conexion - usando datos locales'); }
     
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('uname').textContent = currentUser.name.toUpperCase();
@@ -305,28 +275,22 @@ async function doLogin() {
     renderHome();
   } catch (err) {
     document.getElementById('login-error').style.display = 'block';
-    document.getElementById('login-error').textContent = 'Error de conexión';
+    document.getElementById('login-error').textContent = 'Error de conexion';
     btn.textContent = 'ENTRAR'; btn.disabled = false;
   }
 }
 
 function doLogout() {
-  if (!confirm(`¿Cerrar sesión de ${currentUser?.name}?`)) return;
+  if (!confirm(`Cerrar sesion de ${currentUser?.name}?`)) return;
   currentUser = null;
   document.getElementById('login-screen').classList.remove('hidden');
 }
-
-// Funciones de Admin (Se mantienen idénticas por ahora para no romper db.js)
-async function addUser() { /* Sin cambios por espacio, se migra en módulo Admin */ toast('⚠️ Función en migración'); }
-async function delUser(n) { toast('⚠️ Función en migración'); }
-async function renderUserList() { /* Sin cambios */ }
-async function saveEditUser(name) { toast('⚠️ Función en migración'); }
 
 // ------- CLOCK (Usa TrapUtils) -------
 function updateClock() {
   const n = new Date();
   document.getElementById('clock').textContent = n.toLocaleTimeString('es-AR', { hour12: false });
-  const dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'], meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+  const dias = ['DOM','LUN','MAR','MIE','JUE','VIE','SAB'], meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
   document.getElementById('dateline').textContent = `${dias[n.getDay()]} ${n.getDate()} ${meses[n.getMonth()]} ${n.getFullYear()}`;
   const { turno } = TrapUtils.nowTurno();
   const icons = { Mañana: '🌅', Tarde: '🌇', Noche: '🌙' };
@@ -334,7 +298,7 @@ function updateClock() {
 }
 setInterval(updateClock, 1000); updateClock();
 
-// ------- NAVEGACIÓN -------
+// ------- NAVEGACION -------
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const screenId = name === 'wizard' ? 'screen-wizard' : `screen-${name}`;
@@ -351,145 +315,35 @@ function showScreen(name) {
   if (name === 'home') renderHome();
   if (name === 'pareto') initEventosScreen();
   if (name === 'export') renderExport();
+  if (name === 'admin') TrapAdmin.init();
 }
 
 function tryNew() {
   if (!currentUser || currentUser.role === 'viewer') { document.getElementById('ro-overlay').classList.add('show'); return; }
-  TrapWizard.init(); // <--- LE AGREGAMOS ESTA LÍNEA
+  TrapWizard.init();
   showScreen('wizard');
 }
 
-// ------- PANTALLA HOME (Usa la nueva Tarjeta Universal y TrapUtils) -------
+// ------- PANTALLA HOME -------
 function renderHome() {
   const { dia, turno } = TrapUtils.nowTurno();
-  const idxActual = TrapUtils.turnoIndex(dia, turno);
-  
   const turnoActual = eventos.filter(e => e.fecha_fabrica === dia && e.turno === turno);
   const paradas = turnoActual.filter(e => e.impacto === 'parada');
   const min = paradas.reduce((s, e) => s + (Number(e.duracion_min) || 0), 0);
 
-  const pendientes = eventos.filter(e => {
-    if (e.fecha_fabrica === dia && e.turno === turno) return false;
-    if (e.estado === 'Cerrado') return false;
-    if (e.impacto === 'parada' && e.estado === 'Abierto') return true;
-    if (e.tipo_evento === 'Parámetros') { const diff = idxActual - TrapUtils.turnoIndex(e.fecha_fabrica, e.turno); return diff >= 1 && diff <= 2; }
-    if (e.impacto === 'sin-parada' && e.estado === 'Oportunamente') return true;
-    return false;
-  });
-
   document.getElementById('s-total').textContent = turnoActual.length;
   document.getElementById('s-par').textContent = paradas.length;
   document.getElementById('s-min').textContent = Math.round(min);
-  document.getElementById('s-pend').textContent = pendientes.length;
+  document.getElementById('s-pend').textContent = '0'; // Se actualiza en renderPendientes
 
   const list = document.getElementById('event-list');
   if (!turnoActual.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Sin eventos para este turno.<br>Presioná <strong>+</strong> para registrar.</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Sin eventos para este turno.<br>Presiona <strong>+</strong> para registrar.</div></div>`;
   } else {
     const canEdit = currentUser?.role !== 'viewer';
     list.innerHTML = turnoActual.slice().reverse().map(e => buildEventCard(e, canEdit, 'home')).join('');
   }
-
-  const pendSection = document.getElementById('pend-section');
-  if (!pendientes.length) { pendSection.style.display = 'none'; return; }
-  pendSection.style.display = 'block';
-  document.getElementById('pend-section-label').textContent = `PENDIENTES (${pendientes.length})`;
-    // Renderizar tarjetas pendientes usando el nuevo módulo
   renderPendientes();
-}
-  
-  // ------- RENDERIZADO DE PENDIENTES (Módulo Home) -------
-function renderPendientes() {
-  const { dia, turno } = TrapUtils.nowTurno();
-  const idxActual = TrapUtils.turnoIndex(dia, turno);
-
-  const pendientes = eventos.filter(e => {
-    if (e.fecha_fabrica === dia && e.turno === turno) return false;
-    if (e.estado === 'Cerrado') return false;
-    // Reglas de negocio de las tarjetas
-    if (e.impacto === 'parada' && e.estado === 'Abierto') return true;
-    if (e.tipo_evento === 'Parámetros') { const diff = idxActual - TrapUtils.turnoIndex(e.fecha_fabrica, e.turno); return diff >= 1 && diff <= 2; }
-    if (e.impacto === 'sin-parada' && e.estado === 'Oportunamente') return true;
-    return false;
-  });
-
-  const pendSection = document.getElementById('pend-section');
-  if (!pendientes.length) { pendSection.style.display = 'none'; return; }
-  
-  pendSection.style.display = 'block';
-  document.getElementById('pend-section-label').textContent = `PENDIENTES (${pendientes.length})`;
-
-  const canEdit = currentUser?.role !== 'viewer';
-  
-  // Ordenar: Paradas abiertas primero, luego Sin parada, luego Parámetros
-  const orden = e => e.impacto === 'parada' ? 0 : e.tipo_evento === 'Parámetros' ? 2 : 1;
-  const pendOrdenados = [...pendientes].sort((a, b) => orden(a) - orden(b));
-
-  document.getElementById('pend-cards-list').innerHTML = pendOrdenados.map(e => {
-    const ti = TrapUtils.fmtHora(e.inicio_evento);
-    const idxEv = TrapUtils.turnoIndex(e.fecha_fabrica, e.turno);
-    const turnosPasados = idxActual - idxEv;
-
-    // 1. TARJETA GRANDE: Paradas Abiertas
-    if (e.impacto === 'parada' && e.estado === 'Abierto') {
-      const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id})">⏹ CERRAR</button>` : '';
-      return `<div class="event-card parada" style="border-left:4px solid var(--danger);border:1px solid rgba(255,23,68,.4)">
-        <div class="event-header"><div>
-          <div class="event-linea">${lineaBadge(e.linea)}<span style="color:var(--text2);font-size:10px">${e.fecha_fabrica} · ${e.turno||''}</span></div>
-          <div class="event-equipo">${e.equipo}</div>
-          <div class="event-comp">${e.componente||''} · ${e.tipo_evento||''}</div>
-        </div><div class="event-time">${ti} →<div class="event-dur" style="color:var(--danger)">ABIERTA</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--warn)">${turnosPasados} turno(s)</div></div></div>
-        <div class="event-desc">${e.descripcion}</div>
-        <div class="event-footer"><span class="badge badge-danger">🛑 PARADA ABIERTA</span>
-        <div class="event-actions">${cb}</div></div>
-      </div>`;
-    }
-
-    // 2. TARJETA COMPACTA: Parámetros u Oportunamente
-    const isParam = e.tipo_evento === 'Parámetros';
-    const borderColor = isParam ? 'var(--accent)' : 'var(--ok)';
-    const badgeColor = isParam ? 'badge-blue' : 'badge-ok';
-    const badgeIcon = isParam ? '📊 PARÁMETROS' : '⚙️ SIN PARADA';
-    const resto = isParam ? `(${2 - turnosPasados + 1} turno(s) restante)` : '';
-    const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id});event.stopPropagation()">✏️</button>` : '';
-    const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});event.stopPropagation()">✓ OK</button>` : '';
-    
-    // Botón mágico: Cierra el pendiente y abre el wizard pre-cargado
-    const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">✔ CERRAR + INTERVENIR</button>` : '';
-
-    return `<div class="compact-card" style="border-left-color:${borderColor}" onclick="toggleCompact(this)">
-      <div class="compact-row">
-        ${lineaBadge(e.linea)}
-        <strong style="font-size:12px">${e.equipo}</strong>
-        <span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span>
-        <span class="compact-expand-hint">▼ ${e.fecha_fabrica} ${resto}</span>
-      </div>
-      <div class="compact-desc">${e.descripcion}</div>
-      <div class="compact-body">
-        <div style="font-size:12px;color:var(--text2);margin:8px 0;line-height:1.5">${e.descripcion}</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-          <div style="display:flex;gap:5px"><span class="badge ${badgeColor}">${badgeIcon}</span><span class="badge badge-blue">${e.sector||''}</span></div>
-          <div class="event-actions" style="flex-wrap:wrap;gap:4px">${cib}${cb}${eb}</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-  // ------- CERRAR PENDIENTE E INICIAR NUEVO EVENTO -------
-function cerrarYNuevo(id) {
-  if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show');
-  const e = eventos.find(x => x.id === id);
-  if (!e) return;
-  closeEvent(id); // Cierra el pendiente en el fondo
-  
-  // Pre-carga datos para el nuevo wizard
-  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector };
-  TrapWizard.init(); // Reinicia el paso visual
-  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector }; // Mantiene la precarga
-  showScreen('wizard');
-  toast('✅ Pendiente cerrado — Completá el nuevo evento');
 }
 
 // ------- TARJETA UNIVERSAL DE EVENTOS -------
@@ -497,16 +351,16 @@ function buildEventCard(e, canEdit, contexto = 'home') {
   const lc = lineaColor(e.linea);
   const ti = TrapUtils.fmtHora(e.inicio_evento);
   const tf = e.fin_evento ? TrapUtils.fmtHora(e.fin_evento) : '—';
-  const ib = e.impacto === 'parada' ? `<span class="badge badge-danger">🛑 PARADA</span>` : `<span class="badge badge-ok">⚙️ SIN PARADA</span>`;
-  const estadoBadge = e.estado === 'Oportunamente' ? `<span class="badge badge-warn">⏳ OPORT.</span>` : e.estado === 'Abierto' ? `<span class="badge badge-danger">🔴 ABIERTO</span>` : '';
+  const ib = e.impacto === 'parada' ? `<span class="badge badge-danger">PARADA</span>` : `<span class="badge badge-ok">SIN PARADA</span>`;
+  const estadoBadge = e.estado === 'Oportunamente' ? `<span class="badge badge-warn">OPORT.</span>` : e.estado === 'Abierto' ? `<span class="badge badge-danger">ABIERTO</span>` : '';
   const { dia, turno } = TrapUtils.nowTurno();
   const esMiTurno = e.fecha_fabrica === dia && e.turno === turno;
   const canClose = (e.estado === 'Abierto' || e.estado === 'Oportunamente') && canEdit;
   const canDel = canEdit && (currentUser?.role === 'admin' || esMiTurno);
   const refrescar = contexto === 'eventos' ? `initEventosScreen()` : `renderHome()`;
-  const cb = canClose ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});${refrescar}">⏹ CERRAR</button>` : '';
-  const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id})">✏️</button>` : '';
-  const db = canDel ? `<button class="btn-del-ev" onclick="deleteEvent(${e.id}, ${contexto === 'eventos'})">🗑</button>` : '';
+  const cb = canClose ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});${refrescar}">CERRAR</button>` : '';
+  const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id})">EDITAR</button>` : '';
+  const db = canDel ? `<button class="btn-del-ev" onclick="deleteEvent(${e.id}, ${contexto === 'eventos'})">ELIMINAR</button>` : '';
   const infoExtra = contexto === 'eventos' ? `${e.fecha_fabrica || ''} · ${e.turno || ''}` : `${e.turno || ''} · ${e.responsable || ''}`;
 
   return `<div class="event-card ${e.impacto}" style="border-left:4px solid ${lc}">
@@ -520,13 +374,90 @@ function buildEventCard(e, canEdit, contexto = 'home') {
     </div>
     <div class="event-desc">${e.descripcion}</div>
     <div class="event-footer">
-      <div style="display:flex;gap:5px;flex-wrap:wrap">${ib}${estadoBadge}<span class="badge badge-blue">${e.sector || ''}</span>${e.pendiente ? `<span class="badge badge-warn">🔄</span>` : ''}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">${ib}${estadoBadge}<span class="badge badge-blue">${e.sector || ''}</span>${e.pendiente ? `<span class="badge badge-warn">PEND.</span>` : ''}</div>
       <div class="event-actions">${cb}${eb}${db}</div>
     </div>
   </div>`;
 }
 
-// ------- FILTROS Y EVENTOS (Usa TrapUtils.normalizarFecha) -------
+// ------- PENDIENTES -------
+function renderPendientes() {
+  const { dia, turno } = TrapUtils.nowTurno();
+  const idxActual = TrapUtils.turnoIndex(dia, turno);
+  const pendientes = eventos.filter(e => {
+    if (e.fecha_fabrica === dia && e.turno === turno) return false;
+    if (e.estado === 'Cerrado') return false;
+    if (e.impacto === 'parada' && e.estado === 'Abierto') return true;
+    if (e.tipo_evento === 'Parámetros') { const diff = idxActual - TrapUtils.turnoIndex(e.fecha_fabrica, e.turno); return diff >= 1 && diff <= 2; }
+    if (e.impacto === 'sin-parada' && e.estado === 'Oportunamente') return true;
+    return false;
+  });
+  const pendSection = document.getElementById('pend-section');
+  if (!pendientes.length) { pendSection.style.display = 'none'; document.getElementById('s-pend').textContent = '0'; return; }
+  
+  pendSection.style.display = 'block';
+  document.getElementById('s-pend').textContent = pendientes.length;
+  document.getElementById('pend-section-label').textContent = `PENDIENTES (${pendientes.length})`;
+  const canEdit = currentUser?.role !== 'viewer';
+  const orden = e => e.impacto === 'parada' ? 0 : e.tipo_evento === 'Parámetros' ? 2 : 1;
+  const pendOrdenados = [...pendientes].sort((a, b) => orden(a) - orden(b));
+
+  document.getElementById('pend-cards-list').innerHTML = pendOrdenados.map(e => {
+    const ti = TrapUtils.fmtHora(e.inicio_evento);
+    const idxEv = TrapUtils.turnoIndex(e.fecha_fabrica, e.turno);
+    const turnosPasados = idxActual - idxEv;
+    if (e.impacto === 'parada' && e.estado === 'Abierto') {
+      const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id})">CERRAR</button>` : '';
+      return `<div class="event-card parada" style="border-left:4px solid var(--danger);border:1px solid rgba(255,23,68,.4)">
+        <div class="event-header"><div>
+          <div class="event-linea">${lineaBadge(e.linea)}<span style="color:var(--text2);font-size:10px">${e.fecha_fabrica} · ${e.turno||''}</span></div>
+          <div class="event-equipo">${e.equipo}</div><div class="event-comp">${e.componente||''} · ${e.tipo_evento||''}</div>
+        </div><div class="event-time">${ti} -><div class="event-dur" style="color:var(--danger)">ABIERTA</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn)">${turnosPasados} turno(s)</div></div></div>
+        <div class="event-desc">${e.descripcion}</div>
+        <div class="event-footer"><span class="badge badge-danger">PARADA ABIERTA</span><div class="event-actions">${cb}</div></div>
+      </div>`;
+    }
+    const isParam = e.tipo_evento === 'Parámetros';
+    const borderColor = isParam ? 'var(--accent)' : 'var(--ok)';
+    const badgeColor = isParam ? 'badge-blue' : 'badge-ok';
+    const badgeIcon = isParam ? 'PARÁMETROS' : 'SIN PARADA';
+    const resto = isParam ? `(${2 - turnosPasados + 1} turno(s) restante)` : '';
+    const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id});event.stopPropagation()">EDITAR</button>` : '';
+    const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});event.stopPropagation()">OK</button>` : '';
+    const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">CERRAR + INTERVENIR</button>` : '';
+    return `<div class="compact-card" style="border-left-color:${borderColor}" onclick="toggleCompact(this)">
+      <div class="compact-row">${lineaBadge(e.linea)}<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span><span class="compact-expand-hint">▼ ${e.fecha_fabrica} ${resto}</span></div>
+      <div class="compact-desc">${e.descripcion}</div>
+      <div class="compact-body">
+        <div style="font-size:12px;color:var(--text2);margin:8px 0;line-height:1.5">${e.descripcion}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:5px"><span class="badge ${badgeColor}">${badgeIcon}</span><span class="badge badge-blue">${e.sector||''}</span></div>
+          <div class="event-actions" style="flex-wrap:wrap;gap:4px">${cib}${cb}${eb}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCompact(el) {
+  el.classList.toggle('expanded');
+  const hint = el.querySelector('.compact-expand-hint');
+  if (hint) { hint.textContent = hint.textContent.startsWith('▼') ? hint.textContent.replace('▼', '▲') : hint.textContent.replace('▲', '▼'); }
+}
+
+function cerrarYNuevo(id) {
+  if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show');
+  const e = eventos.find(x => x.id === id); if (!e) return;
+  closeEvent(id);
+  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector };
+  TrapWizard.init();
+  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector };
+  showScreen('wizard');
+  toast('Pendiente cerrado — Completá el nuevo evento');
+}
+
+// ------- FILTROS Y EVENTOS -------
 function initEventosScreen() {
   const equipos = [...new Set(eventos.map(e => e.equipo).filter(Boolean))].sort();
   const sel = document.getElementById('flt-equipo');
@@ -554,7 +485,6 @@ function renderEventosFiltrados() {
   const linea = document.getElementById('flt-linea').value, impacto = document.getElementById('flt-impacto').value;
   const equipo = document.getElementById('flt-equipo').value;
   let filtrados = [...eventos].reverse();
-  
   if (desde) filtrados = filtrados.filter(e => { const ref = TrapUtils.normalizarFecha(e.inicio_evento) || TrapUtils.normalizarFecha(e.fecha_fabrica); return ref && ref >= desde; });
   if (hasta) filtrados = filtrados.filter(e => { const ref = TrapUtils.normalizarFecha(e.inicio_evento) || TrapUtils.normalizarFecha(e.fecha_fabrica); return ref && ref <= hasta; });
   if (linea) filtrados = filtrados.filter(e => e.linea === linea);
@@ -572,49 +502,45 @@ function renderEventosFiltrados() {
   list.innerHTML = filtrados.map(e => buildEventCard(e, canEdit, 'eventos')).join('');
 }
 
-// ------- ACCIONES RÁPIDAS (Se mantienen para que funcione la app) -------
-async function closeEvent(id) { if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show'); const e = eventos.find(x => x.id === id); if (!e) return; const n = new Date(); e.fin_evento = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'T'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); e.duracion_min = e.inicio_evento ? Math.round((n - new Date(e.inicio_evento)) / 60000) : ''; e.estado = 'Cerrado'; e.pendiente = false; localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); renderHome(); toast('✅ Evento cerrado'); await db_updateEvento(id, { fin_evento: e.fin_evento, duracion_min: e.duracion_min, estado: 'Cerrado', pendiente: false }); }
-// ------- MODAL EDITAR EVENTO -------
+// ------- ACCIONES RÁPIDAS -------
+async function closeEvent(id) {
+  if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show');
+  const e = eventos.find(x => x.id === id); if (!e) return;
+  const n = new Date();
+  const localISO = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'T'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  e.fin_evento = localISO;
+  e.duracion_min = e.inicio_evento ? Math.round((n - new Date(e.inicio_evento)) / 60000) : '';
+  e.estado = 'Cerrado'; e.pendiente = false;
+  localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
+  renderHome(); toast('Evento cerrado');
+  await db_updateEvento(id, { fin_evento: e.fin_evento, duracion_min: e.duracion_min, estado: 'Cerrado', pendiente: false });
+}
+
 function openEditModal(id) {
   if (currentUser?.role === 'viewer') { document.getElementById('ro-overlay').classList.add('show'); return; }
-  const e = eventos.find(x => x.id === id);
-  if (!e) return;
-  
-  // 1. Cargar datos estáticos
+  const e = eventos.find(x => x.id === id); if (!e) return;
   document.getElementById('edit-id').value = id;
   document.getElementById('edit-linea').value = e.linea || 'T1';
+  updateEditLinea(e.equipo);
+  setTimeout(() => {
+    document.getElementById('edit-equipo').value = e.equipo || '';
+    updateEditComps(e.componente);
+  }, 50);
   document.getElementById('edit-sector').value = e.sector || 'Mecánica';
   document.getElementById('edit-tipo').value = e.tipo_evento || 'Rotura';
   document.getElementById('edit-desc').value = e.descripcion || '';
   document.getElementById('edit-ini').value = e.inicio_evento || '';
   document.getElementById('edit-fin').value = e.fin_evento || '';
-
-  // 2. Cargar Equipos dinámicamente según la línea
-  updateEditLinea(e.equipo);
-
-  // 3. Esperar un microsegundo para que el navegador dibuje los equipos, y luego cargar el componente
-  setTimeout(() => {
-    document.getElementById('edit-equipo').value = e.equipo || '';
-    updateEditComps(e.componente);
-  }, 50);
-
-  // 4. Abrir el modal
   document.getElementById('modal-edit').classList.add('show');
 }
 
-function closeEditModal() {
-  document.getElementById('modal-edit').classList.remove('show');
-}
+function closeEditModal() { document.getElementById('modal-edit').classList.remove('show'); }
 
 function updateEditLinea(selEquipo) {
   const l = document.getElementById('edit-linea').value;
   const s = document.getElementById('edit-equipo');
   s.innerHTML = '<option value="">— Seleccionar —</option>';
-  (TrapData.EQUIPOS[l] || []).forEach(e => {
-    const o = document.createElement('option');
-    o.value = e; o.textContent = e;
-    s.appendChild(o);
-  });
+  (TrapData.EQUIPOS[l] || []).forEach(e => { const o = document.createElement('option'); o.value = e; o.textContent = e; s.appendChild(o); });
   if (selEquipo) s.value = selEquipo;
 }
 
@@ -624,86 +550,59 @@ function updateEditComps(selComp) {
   const comps = eq ? TrapData.getCompsOrdenados(l, eq, eventos) : [...TrapData.ALL_COMPS, 'Otro'];
   const s = document.getElementById('edit-comp');
   s.innerHTML = '<option value="">— Seleccionar —</option>';
-  comps.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    s.appendChild(o);
-  });
+  comps.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; s.appendChild(o); });
   if (selComp) s.value = selComp;
 }
 
 async function saveEdit() {
   const id = Number(document.getElementById('edit-id').value);
-  const e = eventos.find(x => x.id === id);
-  if (!e) return;
-
+  const e = eventos.find(x => x.id === id); if (!e) return;
   const ini = document.getElementById('edit-ini').value;
   const fin = document.getElementById('edit-fin').value;
-
-  // Validación de lógica de tiempos
-  if (ini && fin && new Date(fin) <= new Date(ini)) {
-    toast('⚠️ El fin no puede ser menor o igual al inicio');
-    return;
-  }
-
-  // Actualizar el objeto del evento
+  if (ini && fin && new Date(fin) <= new Date(ini)) { toast('El fin no puede ser menor o igual al inicio'); return; }
   e.linea = document.getElementById('edit-linea').value;
   e.equipo = document.getElementById('edit-equipo').value;
   e.componente = document.getElementById('edit-comp').value;
   e.sector = document.getElementById('edit-sector').value;
   e.tipo_evento = document.getElementById('edit-tipo').value;
   e.descripcion = document.getElementById('edit-desc').value.trim();
-  e.inicio_evento = ini;
-  e.fin_evento = fin;
-
-  // Recalcular duración y estado automáticamente
-  if (ini && fin) {
-    e.duracion_min = Math.round((new Date(fin) - new Date(ini)) / 60000);
-    e.estado = 'Cerrado';
-    e.pendiente = false;
-  } else if (e.impacto === 'parada' && !fin) {
-    e.duracion_min = '';
-    e.estado = 'Abierto';
-    e.pendiente = true;
-  }
-
-  // Guardar local y refrescar
+  e.inicio_evento = ini; e.fin_evento = fin;
+  if (ini && fin) { e.duracion_min = Math.round((new Date(fin) - new Date(ini)) / 60000); e.estado = 'Cerrado'; e.pendiente = false; }
+  else if (e.impacto === 'parada' && !fin) { e.duracion_min = ''; e.estado = 'Abierto'; e.pendiente = true; }
   localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
-  closeEditModal();
-  renderHome(); // Si estamos en el home, refresca las tarjetas
-  
-  // Si estamos mirando la pantalla de Eventos, también refresca
-  if (document.getElementById('screen-pareto')?.classList.contains('active')) {
-    initEventosScreen();
-  }
-
-  toast('✅ Evento actualizado');
-
-  // Sincronizar con Sheets en background
-  const campos = {
-    linea: e.linea, equipo: e.equipo, componente: e.componente,
-    sector: e.sector, tipo_evento: e.tipo_evento, descripcion: e.descripcion,
-    inicio_evento: e.inicio_evento, fin_evento: e.fin_evento,
-    duracion_min: e.duracion_min, estado: e.estado, pendiente: e.pendiente
-  };
+  closeEditModal(); renderHome();
+  if (document.getElementById('screen-pareto')?.classList.contains('active')) initEventosScreen();
+  toast('Evento actualizado');
+  const campos = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector, tipo_evento: e.tipo_evento, descripcion: e.descripcion, inicio_evento: e.inicio_evento, fin_evento: e.fin_evento, duracion_min: e.duracion_min, estado: e.estado, pendiente: e.pendiente };
   db_updateEvento(id, campos);
 }
-async function deleteEvent(id, fromList = false) { if (!confirm('¿Borrar este evento?')) return; eventos = eventos.filter(x => x.id !== id); localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); toast('🗑 Eliminado'); if (fromList) initEventosScreen(); else renderHome(); await db_deleteEvento(id); }
+
+async function deleteEvent(id, fromList = false) {
+  if (!confirm('Borrar este evento?')) return;
+  eventos = eventos.filter(x => x.id !== id);
+  localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
+  toast('Eliminado');
+  if (fromList) initEventosScreen(); else renderHome();
+  await db_deleteEvento(id);
+}
 
 // ------- EXPORTAR -------
-function exportarCSV() { const h = ['ID','Timestamp','Fecha_fabrica','Turno','Linea','Equipo','Componente','Sector','Tipo_evento','Descripcion','Inicio_evento','Fin_evento','Duracion_min','Estado','Responsable']; const r = eventos.map(e => [e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable].join(',')); const csv = [h.join(','),...r].join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download = `traplog_${new Date().toISOString().slice(0,10)}.csv`; a.click(); toast('✅ CSV descargado'); }
-function renderExport() { const pend = eventos.filter(e => !e._exported); const list = document.getElementById('export-list'); if (!pend.length) { list.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">Todos exportados.</div></div>`; return; } list.innerHTML = pend.map(e => `<div class="csv-row"><div><div class="csv-info">${lineaBadge(e.linea)} <strong>${e.equipo}</strong> · ${e.componente||'—'}</div><div class="csv-date">${e.fecha_fabrica}</div></div><button class="btn-csv" onclick="eventos.find(x=>x.id===${e.id})._exported=true;localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));renderExport();toast('✔ Exportado')">MARCAR ✓</button></div>`).join(''); }
+function exportarCSV() {
+  const h = ['ID','Timestamp','Fecha_fabrica','Turno','Linea','Equipo','Componente','Sector','Tipo_evento','Descripcion','Inicio_evento','Fin_evento','Duracion_min','Estado','Responsable'];
+  const r = eventos.map(e => [e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable].join(','));
+  const csv = [h.join(','),...r].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `traplog_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  toast('CSV descargado');
+}
 
-// ------- RUEDA DE TIEMPO (Se mantiene idéntica por ahora, se limpiará en Módulo Rueda) -------
-let wheelTipo=null, wheelSelectedH=0, wheelSelectedM=0, wheelSelectedDate=null;
-function openWheel(tipo){ toast('⚠️ Rueda en migración'); }
-function closeWheel(){ document.getElementById('wheel-modal').classList.remove('show'); }
-function closeWheelOutside(e){ if(e.target===document.getElementById('wheel-modal')) closeWheel(); }
-function onWheelDateChange(){}
-function onWheelScroll(col){}
-function confirmWheel(){}
-function buildWheelCol(cId, c, s, f){}
-function scrollWheelTo(cId, v){}
+function renderExport() {
+  const pend = eventos.filter(e => !e._exported);
+  const list = document.getElementById('export-list');
+  if (!pend.length) { list.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">Todos exportados.</div></div>`; return; }
+  list.innerHTML = pend.map(e => `<div class="csv-row"><div><div class="csv-info">${lineaBadge(e.linea)} <strong>${e.equipo}</strong> · ${e.componente||'—'}</div><div class="csv-date">${e.fecha_fabrica}</div></div><button class="btn-csv" onclick="eventos.find(x=>x.id===${e.id})._exported=true;localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));renderExport();toast('Exportado')">MARCAR</button></div>`).join('');
+}
 </script>
 </body>
 </html>
