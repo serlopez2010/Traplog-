@@ -162,7 +162,8 @@ const TrapWizard = (function() {
     const sectores = [
       { nombre: 'Mecánica', icono: '🔩' },
       { nombre: 'Trapiches', icono: '⚙️' },
-      { nombre: 'Electrónico', icono: '⚡' },
+      { nombre: 'Electrico', icono: '⚡' },
+      { nombre: 'Electrónico', icono: '📟' },
       { nombre: 'Lubricación', icono: '💧' }
     ];
     const tipos = [
