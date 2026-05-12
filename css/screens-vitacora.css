@@ -538,3 +538,235 @@
   letter-spacing: 1px;
   cursor:         pointer;
 }
+
+/* ── Pantalla de proceso ─────────────────────────────────────────── */
+
+.form-card {
+  background:    var(--surface);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding:       18px;
+  margin-bottom: 16px;
+}
+
+.historial-grid {
+  display:               grid;
+  grid-template-columns: 1fr;
+  gap:                   12px;
+  margin-top:            12px;
+}
+
+.historial-item {
+  background:     var(--surface2);
+  border:         1px solid var(--border);
+  border-radius:  var(--radius-sm);
+  padding:        12px;
+  font-size:      12px;
+  transition:     all var(--transition-fast);
+}
+
+.historial-item:hover {
+  border-color: var(--accent);
+}
+
+.historial-fecha {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  color:          var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  font-weight:    600;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 5px;
+}
+
+.historial-datos {
+  display:         flex;
+  flex-wrap:       wrap;
+  gap:             12px;
+  justify-content: flex-start;
+  margin:          8px 0;
+}
+
+.historial-dato {
+  flex: 0 1 auto;
+  min-width: 100px;
+  background: rgba(0,0,0,.2);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.historial-label {
+  font-family: var(--font-mono);
+  font-size:   8px;
+  color:       var(--text2);
+  display:     block;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+}
+
+.historial-valor {
+  font-family: var(--font-display);
+  font-size:   16px;
+  color:       var(--text);
+}
+
+.historial-legend {
+  font-family: var(--font-mono);
+  font-size:   9px;
+  color:       var(--text2);
+}
+
+.historial-obs {
+  font-size:   10px;
+  color:       var(--text2);
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-style: italic;
+}
+
+.historial-user {
+  font-family: var(--font-mono);
+  font-size:   9px;
+  color:       var(--text2);
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* Banner de turno mejorado */
+.turno-banner {
+  background:    linear-gradient(135deg, rgba(0,212,255,.08), rgba(255,107,53,.08));
+  border:        1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding:       14px;
+  margin-bottom: 16px;
+  text-align:    center;
+}
+
+.turno-title {
+  font-family: var(--font-display);
+  font-size:   18px;
+  color:       var(--accent);
+  letter-spacing: 2px;
+}
+
+.turno-sub {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+
+/* === ACORDEÓN DE PROCESO === */
+.proc-acordeon-item {
+  background: var(--bg-card, #111827);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.proc-acordeon-header {
+  padding: 15px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.proc-acordeon-arrow {
+  transition: transform 0.3s;
+  font-size: 0.9rem;
+}
+
+.proc-acordeon-item.is-open .proc-acordeon-arrow {
+  transform: rotate(180deg);
+}
+
+.proc-acordeon-body {
+  padding: 0 15px 15px 15px;
+  display: none; 
+}
+
+/* El cuerpo se muestra SOLO si el item padre tiene la clase is-open */
+.proc-acordeon-item.is-open .proc-acordeon-body {
+  display: block;
+}
+
+/* Grilla de velocidades compacta */
+.proc-vel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.03);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.proc-vel-title {
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.field-sm input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+}
+
+.field-sm label {
+  display: block;
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+  opacity: 0.8;
+}
+
+/* Rellenos dinámicos */
+.proc-rellenos-section {
+  margin-top: 15px;
+  border-top: 1px dashed rgba(255,255,255,0.2);
+  padding-top: 10px;
+}
+
+.proc-rellenos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.relleno-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 40px;
+  gap: 8px;
+  align-items: end; /* Esto alinea la X con el borde inferior de los selects */
+  margin-bottom: 8px;
+}
+
+.relleno-row select {
+  margin: 0;
+}
+
+.btn-sm {
+  padding: 8px 12px !important;
+  font-size: 0.85rem !important;
+}
+
+.btn-delete-relleno {
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  height: 38px;
+  width: 38px;
+  font-weight: bold;
+  cursor: pointer;
+}

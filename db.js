@@ -88,3 +88,58 @@ async function db_saveUsuario(usuario) {
 async function db_deleteUsuario(name) {
   return await dbCall({ action: 'deleteUsuario', name });
 }
+
+// ======= FUNCIONES PARA DATOS DE PROCESO =======
+
+async function db_guardarDatosProceso(datos) {
+  try {
+    let historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
+    // Sobrescribe si ya existe ese turno y día
+    historial = historial.filter(h => !(h.fecha_fabrica === datos.fecha_fabrica && h.turno === datos.turno));
+    historial.push(datos);
+    localStorage.setItem('traplog_datos_proceso', JSON.stringify(historial));
+    return { ok: true };
+  } catch(e) {
+    console.warn('Error guardando datos de proceso:', e);
+    return { ok: false, error: e.message };
+  }
+}
+
+async function db_getDatosProceso(fecha, turno) {
+  try {
+    const historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
+    const datos = historial.find(h => h.fecha_fabrica === fecha && h.turno === turno);
+    return { ok: true, datos: datos || null };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+// Nueva: Obtener el último registro sin importar cuál sea (para la precarga)
+async function db_getUltimoRegistroProceso() {
+  try {
+    const historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
+    if (historial.length === 0) return { ok: true, datos: null };
+    
+    // Ordenar por timestamp descendente y agarrar el primero
+    historial.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return { ok: true, datos: historial[0] };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+async function db_getHistorialProceso(limite = 20) {
+  try {
+    let historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
+    historial.sort((a, b) => {
+      const dateCompare = (b.fecha_fabrica || '').localeCompare(a.fecha_fabrica || '');
+      if (dateCompare !== 0) return dateCompare;
+      const turnos = { 'Mañana': 1, 'Tarde': 2, 'Noche': 3 };
+      return (turnos[b.turno] || 0) - (turnos[a.turno] || 0);
+    });
+    return { ok: true, datos: historial.slice(0, limite) };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
