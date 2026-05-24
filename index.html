@@ -97,6 +97,8 @@
       <div class="header-time" id="clock">--:--:--</div>
       <div class="header-date" id="dateline">---</div>
       <div class="header-turno-wrap"><div class="turno-chip" id="hdr-turno">—</div></div>
+      <!-- BOTÓN REFRESCAR EN HEADER -->
+      <button id="btn-refresh-header" onclick="manualRefresh()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;display:none;margin-left:8px">🔄</button>
     </div>
   </div>
 
@@ -158,10 +160,11 @@
         </select>
       </div>
       <div style="display:flex;gap:8px">
-        <button onclick="filtroRapido('hoy')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">HOY</button>
-        <button onclick="filtroRapido('semana')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">7 DIAS</button>
-        <button onclick="filtroRapido('mes')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">30 DIAS</button>
-        <button onclick="filtroRapido('todo')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px">TODO</button>
+        <button onclick="filtroRapido('hoy')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">HOY</button>
+        <button onclick="filtroRapido('semana')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">7 DÍAS</button>
+        <button onclick="filtroRapido('mes')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">30 DÍAS</button>
+        <button onclick="filtroRapido('todo')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">TODO</button>
+        <button onclick="manualRefresh()" style="flex:1;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">🔄 REFRESCAR</button>
       </div>
     </div>
     <div id="eventos-count" style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:10px"></div>
@@ -338,7 +341,7 @@
     <span class="nav-label">INICIO</span>
   </button>
   <button class="nav-btn" id="nav-pareto" onclick="showScreen('pareto')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3" y2="22"/><line x1="3" y1="22" x2="21" y2="22"/></svg>
     <span class="nav-label">EVENTOS</span>
   </button>
   <button class="nav-btn" id="nav-proceso" onclick="showScreen('proceso')">
@@ -410,6 +413,7 @@ async function doLogin() {
     document.getElementById('uname').textContent = currentUser.name.toUpperCase();
     document.getElementById('udot').className = 'user-dot dot-' + currentUser.role;
     document.getElementById('nav-admin').style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+    document.getElementById('btn-refresh-header').style.display = 'flex';
     renderHome();
   } catch (err) {
     document.getElementById('login-error').style.display = 'block';
@@ -422,6 +426,39 @@ function doLogout() {
   if (!confirm(`Cerrar sesion de ${currentUser?.name}?`)) return;
   currentUser = null;
   document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('btn-refresh-header').style.display = 'none';
+}
+
+// ------- REFRESCAR DATOS (SIN RECARGAR PÁGINA) -------
+async function manualRefresh() {
+  const btn = document.getElementById('btn-refresh-header') || event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '⏳'; btn.disabled = true;
+  
+  try {
+    const res = await db_getEventos();
+    if (res.ok) {
+      eventos = res.eventos;
+      localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
+      
+      // Re-renderizar pantalla actual
+      const activeScreen = document.querySelector('.screen.active')?.id;
+      if (activeScreen === 'screen-home') renderHome();
+      else if (activeScreen === 'screen-pareto') renderEventosFiltrados();
+      
+      toast('✅ Datos sincronizados');
+    } else {
+      toast('⚠️ Sin conexión — datos locales');
+    }
+  } catch (err) {
+    toast('❌ Error al sincronizar');
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
 }
 
 // ------- CLOCK (Usa TrapUtils) -------
@@ -454,7 +491,7 @@ function showScreen(name) {
   if (name === 'pareto') initEventosScreen();
   if (name === 'export') renderExport();
   if (name === 'admin') TrapAdmin.init();
-  if (name === 'proceso') TrapProcess.init(); // <--- NUEVA LÍNEA
+  if (name === 'proceso') TrapProcess.init();
 }
 
 function tryNew() {
@@ -473,7 +510,7 @@ function renderHome() {
   document.getElementById('s-total').textContent = turnoActual.length;
   document.getElementById('s-par').textContent = paradas.length;
   document.getElementById('s-min').textContent = Math.round(min);
-  document.getElementById('s-pend').textContent = '0'; // Se actualiza en renderPendientes
+  document.getElementById('s-pend').textContent = '0';
 
   const list = document.getElementById('event-list');
   if (!turnoActual.length) {
@@ -564,9 +601,9 @@ function renderPendientes() {
     const resto = isParam ? `(${2 - turnosPasados + 1} turno(s) restante)` : '';
     const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id});event.stopPropagation()">EDITAR</button>` : '';
     const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});event.stopPropagation()">OK</button>` : '';
-    const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">CERRAR + INTERVENIR</button>` : '';
+    const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 10px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">CERRAR Y NUEVO</button>` : '';
     return `<div class="compact-card" style="border-left-color:${borderColor}" onclick="toggleCompact(this)">
-      <div class="compact-row">${lineaBadge(e.linea)}<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span><span class="compact-expand-hint">▼ ${e.fecha_fabrica} ${resto}</span></div>
+      <div class="compact-row">${lineaBadge(e.linea)}<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span><span class="compact-expand-hint">▼</span></div>
       <div class="compact-desc">${e.descripcion}</div>
       <div class="compact-body">
         <div style="font-size:12px;color:var(--text2);margin:8px 0;line-height:1.5">${e.descripcion}</div>
@@ -728,7 +765,7 @@ async function deleteEvent(id, fromList = false) {
 // ------- EXPORTAR -------
 function exportarCSV() {
   const h = ['ID','Timestamp','Fecha_fabrica','Turno','Linea','Equipo','Componente','Sector','Tipo_evento','Descripcion','Inicio_evento','Fin_evento','Duracion_min','Estado','Responsable'];
-  const r = eventos.map(e => [e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable].join(','));
+  const r = eventos.map(e => [e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable]);
   const csv = [h.join(','),...r].join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
@@ -740,7 +777,12 @@ function renderExport() {
   const pend = eventos.filter(e => !e._exported);
   const list = document.getElementById('export-list');
   if (!pend.length) { list.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">Todos exportados.</div></div>`; return; }
-  list.innerHTML = pend.map(e => `<div class="csv-row"><div><div class="csv-info">${lineaBadge(e.linea)} <strong>${e.equipo}</strong> · ${e.componente||'—'}</div><div class="csv-date">${e.fecha_fabrica}</div></div><button class="btn-csv" onclick="eventos.find(x=>x.id===${e.id})._exported=true;localStorage.setItem('vitacora_trapiches',JSON.stringify(eventos));renderExport();toast('Exportado')">MARCAR</button></div>`).join('');
+  list.innerHTML = pend.map(e => `<div class="csv-row"><div><div class="csv-info">${lineaBadge(e.linea)} <strong>${e.equipo}</strong> · ${e.componente||'—'}</div><div class="csv-date">${e.fecha_fabrica}</div></div><div class="csv-actions"><button class="btn-ok" onclick="marcarExportado(${e.id})">✓ MARCAR</button></div></div>`).join('');
+}
+
+function marcarExportado(id) {
+  const e = eventos.find(x => x.id === id);
+  if (e) { e._exported = true; localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); renderExport(); toast('Marcado como exportado'); }
 }
 </script>
 </body>
