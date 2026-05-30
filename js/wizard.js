@@ -269,7 +269,7 @@ const TrapWizard = (function() {
   function htmlResumen() {
     ev.descripcion = document.getElementById('wiz-desc')?.value || ev.descripcion;
     const estadoStr = (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : 
-                      (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? '<span style="color:var(--warn)">OPORTUNAMENTE (QUEDARÁ EN PENDIENTES 2 TURNOS)</span>' :
+                      (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? '<span style="color:var(--warn)">OPORTUNAMENTE (QUEDARÁ EN PENDIENTES HASTA CERRAR MANUALMENTE)</span>' :
                       '<span style="color:var(--ok)">CERRADO</span>';
     
     return `
