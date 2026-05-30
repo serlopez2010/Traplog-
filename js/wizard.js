@@ -108,10 +108,12 @@ const TrapWizard = (function() {
       inicio_evento: ev.inicio_evento,
       fin_evento: ev.impacto === 'parada' ? (ev.fin_evento || '') : '',
       duracion_min: ev.impacto === 'parada' && ev.inicio_evento && ev.fin_evento ? Math.round((new Date(ev.fin_evento) - new Date(ev.inicio_evento)) / 60000) : '',
-      estado: (ev.impacto === 'parada' && !ev.fin_evento) ? 'Abierto' : 'Cerrado',
+      estado: (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? 'Oportunamente' : 
+              (ev.impacto === 'parada' && !ev.fin_evento) ? 'Abierto' : 'Cerrado',
       responsable: currentUser ? currentUser.name : '',
       impacto: ev.impacto,
-      pendiente: (ev.impacto === 'parada' && !ev.fin_evento) || ev.estado === 'Oportunamente',
+      pendiente: (ev.impacto === 'parada' && !ev.fin_evento) || 
+                 (ev.impacto === 'sin-parada' && ev.estado === 'Oportunamente'),
       _exported: false
     };
 
@@ -148,13 +150,13 @@ const TrapWizard = (function() {
   function htmlImpacto() {
     return `
       <div class="choice-grid">
-        <div class="choice-card" onclick="TrapWizard.sel('impacto','parada',this)"><span class="choice-icon">🛑</span><div class="choice-title">PARADA DE PRODUCCIÓN</div><div class="choice-desc">La línea se detuvo</div></div>
-        <div class="choice-card" onclick="TrapWizard.sel('impacto','sin-parada',this)"><span class="choice-icon">⚙️</span><div class="choice-title">SIN PARADA</div><div class="choice-desc">La línea sigue operando</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('impacto','parada',this)"><span class="choice-icon">🛑</span><div class="choice-title">PARADA DE PRODUCCIÓN</div><div class="choice-desc">La producción se detiene</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('impacto','sin-parada',this)"><span class="choice-icon">⚙️</span><div class="choice-title">SIN PARADA</div><div class="choice-desc">Ajustes y otras acciones</div></div>
       </div>
       <div class="section-label">ORIGEN DEL EVENTO</div>
       <div class="choice-grid">
-        <div class="choice-card" onclick="TrapWizard.sel('origen','Operativo',this)"><span class="choice-icon">👷</span><div class="choice-title">ORDEN OPERATIVA</div><div class="choice-desc">Decisión del equipo</div></div>
-        <div class="choice-card" onclick="TrapWizard.sel('origen','Falla Física',this)"><span class="choice-icon">🔧</span><div class="choice-title">FALLA FÍSICA</div><div class="choice-desc">Problema en maquinaria</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('origen','Operativo',this)"><span class="choice-icon">👷</span><div class="choice-title">ORDEN OPERATIVA</div><div class="choice-desc">Decisión de operación</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('origen','Falla Física',this)"><span class="choice-icon">🔧</span><div class="choice-title">FALLA FÍSICA</div><div class="choice-desc">Problema en equipo</div></div>
       </div>`;
   }
 
@@ -173,9 +175,11 @@ const TrapWizard = (function() {
     
     return `
       <div class="section-label">SECTOR RESPONSABLE</div>
-      <div class="choice-grid cols-3">${sectores.map(s => `<div class="choice-card" onclick="TrapWizard.sel('sector','${s.nombre}',this)"><span class="choice-icon">${s.icono}</span><div class="choice-title">${s.nombre.toUpperCase()}</div></div>`).join('')}</div>
+      <div class="choice-grid cols-3">${sectores.map(s => `<div class="choice-card" onclick="TrapWizard.sel('sector','${s.nombre}',this)"><span class="choice-icon">${s.icono}</span><div class="choice-title">${s.nombre}</div></div>`).join('')}
+      </div>
       <div class="section-label">TIPO DE PROBLEMA</div>
-      <div class="choice-grid">${tipos.map(t => `<div class="choice-card" onclick="TrapWizard.sel('tipo','${t.nombre}',this)"><span class="choice-icon">${t.icono}</span><div class="choice-title">${t.nombre.toUpperCase()}</div></div>`).join('')}</div>`;
+      <div class="choice-grid">${tipos.map(t => `<div class="choice-card" onclick="TrapWizard.sel('tipo','${t.nombre}',this)"><span class="choice-icon">${t.icono}</span><div class="choice-title">${t.nombre}</div></div>`).join('')}
+      </div>`;
   }
 
   function htmlMotivo() {
@@ -190,17 +194,18 @@ const TrapWizard = (function() {
     ];
     
     return `
-      <div class="choice-grid cols-2">${motivos.map(m => `<div class="choice-card" onclick="TrapWizard.selMotivo('${m.nombre}', this)"><span class="choice-icon">${m.icono}</span><div class="choice-title">${m.nombre.toUpperCase()}</div>${m.desc ? `<div class="choice-desc">${m.desc}</div>` : ''}</div>`).join('')}</div>
-      <div class="field-group" id="motivo-otro-wrap" style="display:${ev.motivo==='Otro'?'block':'none'};margin-top:10px"><label>ESPECIFICAR MOTIVO</label><input type="text" id="inp-motivo" placeholder="Describir..." oninput="TrapWizard.ev.motivo=this.value"></div>`;
+      <div class="choice-grid cols-2">${motivos.map(m => `<div class="choice-card" onclick="TrapWizard.selMotivo('${m.nombre}', this)"><span class="choice-icon">${m.icono}</span><div class="choice-title">${m.nombre}</div><div class="choice-desc">${m.desc}</div></div>`).join('')}
+      </div>
+      <div class="field-group" id="motivo-otro-wrap" style="display:${ev.motivo==='Otro'?'block':'none'};margin-top:10px"><label>ESPECIFICAR MOTIVO</label><input type="text" id="inp-motivo" placeholder="Escribí el motivo..." oninput="ev.motivo=this.value"></div>`;
   }
 
   function htmlLinea() {
     return `
       <div class="info-box"><span style="font-size:20px">🕐</span><div class="info-box-text">${TrapUtils.nowTurno().turno.toUpperCase()} · ${TrapUtils.nowTurno().dia}</div></div>
       <div class="choice-grid cols-3" style="margin-top:0">
-        <div class="choice-card" onclick="TrapWizard.sel('linea','T1',this)" style="border-bottom:3px solid var(--t1)"><span class="choice-icon" style="color:var(--t1);font-size:20px;font-family:var(--display)">T1</span><div class="choice-title" style="color:var(--t1)">TRAPICHE 1</div></div>
-        <div class="choice-card" onclick="TrapWizard.sel('linea','T2',this)" style="border-bottom:3px solid var(--t2)"><span class="choice-icon" style="color:var(--t2);font-size:20px;font-family:var(--display)">T2</span><div class="choice-title" style="color:var(--t2)">TRAPICHE 2</div></div>
-        <div class="choice-card" onclick="TrapWizard.sel('linea','T3',this)" style="border-bottom:3px solid var(--t3)"><span class="choice-icon" style="color:var(--t3);font-size:20px;font-family:var(--display)">T3</span><div class="choice-title" style="color:var(--t3)">TRAPICHE 3</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('linea','T1',this)" style="border-bottom:3px solid var(--t1)"><span class="choice-icon" style="color:var(--t1);font-size:20px;font-family:var(--display)">T1</span><div class="choice-title">TRAPICHE 1</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('linea','T2',this)" style="border-bottom:3px solid var(--t2)"><span class="choice-icon" style="color:var(--t2);font-size:20px;font-family:var(--display)">T2</span><div class="choice-title">TRAPICHE 2</div></div>
+        <div class="choice-card" onclick="TrapWizard.sel('linea','T3',this)" style="border-bottom:3px solid var(--t3)"><span class="choice-icon" style="color:var(--t3);font-size:20px;font-family:var(--display)">T3</span><div class="choice-title">TRAPICHE 3</div></div>
       </div>`;
   }
 
@@ -263,7 +268,9 @@ const TrapWizard = (function() {
 
   function htmlResumen() {
     ev.descripcion = document.getElementById('wiz-desc')?.value || ev.descripcion;
-    const estadoStr = (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : '<span style="color:var(--ok)">CERRADO</span>';
+    const estadoStr = (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : 
+                      (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? '<span style="color:var(--warn)">OPORTUNAMENTE (QUEDARÁ EN PENDIENTES 2 TURNOS)</span>' :
+                      '<span style="color:var(--ok)">CERRADO</span>';
     
     return `
       <div class="hl-box">
