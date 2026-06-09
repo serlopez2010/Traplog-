@@ -15,6 +15,7 @@
 <script src="db.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/data.js"></script>
+<script src="js/zafra.js"></script>
 </head>
 <body>
 <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
@@ -43,6 +44,8 @@
     <div class="sb-item" onclick="showDash('pendientes')" id="nav-pendientes"><span class="ic">⚠️</span> Pendientes</div>
     <div class="sb-item" onclick="showDash('eventos')" id="nav-eventos"><span class="ic">📋</span> Todos los Eventos</div>
   </nav>
+  <div class="sb-section">Sistema</div>
+    <div class="sb-item" onclick="abrirModalZafra()"><span class="ic">⚙️</span> Configurar Zafra</div>
   <div class="sb-footer">
     <div class="sb-user">
       <div class="sb-user-dot"></div>
@@ -144,7 +147,7 @@
 
     <!-- RANKING DE FALLAS -->
     <div class="dash-screen" id="screen-pareto">
-      <div class="sec-title">RANKING POR LÍNEA · EQUIPO</div>
+      <div class="sec-title">RANKING POR LÍNEA · EQUIPO (cantidad de eventos con minutos perdidos)</div>
       <div id="pareto-equipo"></div>
       <div class="sec-title">RANKING POR SECTOR</div>
       <div id="pareto-sector"></div>
@@ -281,6 +284,12 @@ function sumMin(evs){
 
 // Calcula turnos reales según rango de fechas (No depende de si hubo eventos)
 function getFilteredTurnoCount(evs){
+  const periodo = document.getElementById('f-periodo').value;
+  if(periodo === 'zafra') {
+    const fechas = TrapZafra.getFechasZafra();
+    const diasZafra = Math.round((new Date(fechas.fin) - new Date(fechas.inicio)) / 86400000) + 1;
+    return diasZafra * 3;
+  }
   if(!evs.length) return 1;
   let minIdx = Infinity, maxIdx = -Infinity;
   evs.forEach(e => {
@@ -385,7 +394,10 @@ function getFiltered(){
     evs=evs.filter(e=>new Date(e.timestamp)>=d);
     document.getElementById('period-chip').textContent='ÚLTIMOS 30 DÍAS';
   } else if(periodo==='zafra'){
-    document.getElementById('period-chip').textContent='ZAFRA COMPLETA';
+    const anioZafra = TrapZafra.getAnioZafraActual();
+    evs = TrapZafra.filtrarEventos(evs, anioZafra);
+    const res = TrapZafra.getResumen(anioZafra);
+    document.getElementById('period-chip').textContent = 'ZAFRA ' + anioZafra + ': ' + res.periodo;
   } else if(periodo==='custom'){
     const desde=document.getElementById('f-desde').value;
     const hasta=document.getElementById('f-hasta').value;
@@ -718,6 +730,55 @@ document.addEventListener('keydown', function(e) {
     if(hint){ hint.style.display = 'block'; setTimeout(()=>{ hint.style.display = 'none'; }, 2000); }
   }
 });
+
+
+// ======= ZAFRA / PERIODO PRODUCTIVO =======
+function abrirModalZafra() {
+  let modal = document.getElementById('modal-zafra');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-zafra';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;max-width:420px;width:100%;animation:fadeIn .2s ease"><div class="modal-title" style="font-family:var(--font-display);font-size:18px;color:var(--accent);margin-bottom:4px">⚙️ CONFIGURAR ZAFRA</div><p style="font-size:12px;color:var(--text2);margin-bottom:12px">Define el periodo productivo para los calculos de KPI.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">MES INICIO</label><select id="zafra-ini-mes" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5" selected>Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">DIA INICIO</label><input type="number" id="zafra-ini-dia" value="1" min="1" max="31" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">MES FIN</label><select id="zafra-fin-mes" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12" selected>Diciembre</option></select></div><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">DIA FIN</label><input type="number" id="zafra-fin-dia" value="31" min="1" max="31" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"></div></div><div class="field-group" style="margin-bottom:14px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="zafra-habilitado" checked style="width:auto">Filtrar KPIs por periodo de zafra</label></div><div id="zafra-resumen" style="font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-bottom:14px;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="filter-btn secondary" onclick="cerrarModalZafra()">CANCELAR</button><button class="filter-btn" onclick="guardarZafra()">GUARDAR</button></div></div>';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:var(--z-modal);align-items:center;justify-content:center;padding:16px';
+    document.body.appendChild(modal);
+  }
+  const cfg = TrapZafra.getConfig();
+  document.getElementById('zafra-ini-mes').value = cfg.inicio.mes;
+  document.getElementById('zafra-ini-dia').value = cfg.inicio.dia;
+  document.getElementById('zafra-fin-mes').value = cfg.fin.mes;
+  document.getElementById('zafra-fin-dia').value = cfg.fin.dia;
+  document.getElementById('zafra-habilitado').checked = cfg.habilitado;
+  const res = TrapZafra.getResumen();
+  document.getElementById('zafra-resumen').innerHTML = '<b>Periodo actual:</b> ' + res.periodo + '<br><b>Dias productivos:</b> ' + res.dias + ' dias';
+  modal.style.display = 'flex';
+}
+function cerrarModalZafra() {
+  const modal = document.getElementById('modal-zafra');
+  if (modal) modal.style.display = 'none';
+}
+function guardarZafra() {
+  const iniMes = parseInt(document.getElementById('zafra-ini-mes').value);
+  const iniDia = parseInt(document.getElementById('zafra-ini-dia').value);
+  const finMes = parseInt(document.getElementById('zafra-fin-mes').value);
+  const finDia = parseInt(document.getElementById('zafra-fin-dia').value);
+  const habilitado = document.getElementById('zafra-habilitado').checked;
+  const diasPorMes = [0,31,29,31,30,31,30,31,31,30,31,30,31];
+  if (iniDia < 1 || iniDia > diasPorMes[iniMes]) { alert('Dia de inicio invalido para ese mes'); return; }
+  if (finDia < 1 || finDia > diasPorMes[finMes]) { alert('Dia de fin invalido para ese mes'); return; }
+  const cfg = { anio: new Date().getFullYear(), inicio: { mes: iniMes, dia: iniDia }, fin: { mes: finMes, dia: finDia }, habilitado: habilitado };
+  TrapZafra.setConfig(cfg);
+  TrapZafra.syncToDB();
+  cerrarModalZafra();
+  if (document.getElementById('f-periodo').value === 'zafra') applyFilter();
+}
+function toast(m) {
+  const t = document.createElement('div');
+  t.textContent = m;
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);border:1px solid var(--border);padding:10px 20px;border-radius:8px;font-family:var(--mono);font-size:11px;z-index:9999;animation:fadeIn .2s ease;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(function(){ t.remove(); }, 300); }, 2500);
+}
 
 </script>
 </body>

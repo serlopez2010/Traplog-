@@ -1,23 +1,20 @@
 /**
  * TRAPLOG - MÓDULO DE UTILIDADES (utils.js)
  * Cálculos de tiempo, turnos y normalización de datos.
- * v2026 - Adaptado a TrapTurnos para horarios configurables.
  */
 const TrapUtils = (function() {
 
   // ======= CÁLCULO DE TURNO Y DÍA DE FÁBRICA =======
-  // Delegado a TrapTurnos para horarios configurables
+  // Regla de negocio: La noche (21:00 a 04:59) pertenece al día anterior.
   function getTurnoInfo(d) {
-    if (typeof TrapTurnos !== 'undefined') {
-      return {
-        turno: TrapTurnos.getTurnoActual(d),
-        dia: TrapTurnos.getDiaFabrica(d)
-      };
-    }
-    // Fallback si TrapTurnos no está cargado (no debería pasar)
-    const h = d.getHours();
-    const turno = h >= 6 && h < 14 ? 'Mañana' : h >= 14 && h < 22 ? 'Tarde' : 'Noche';
-    const dia = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const h = d.getHours(), m = d.getMinutes(), tot = h * 60 + m;
+    let turno = tot >= 5 * 60 && tot < 13 * 60 ? 'Mañana' : 
+                tot >= 13 * 60 && tot < 21 * 60 ? 'Tarde' : 'Noche';
+    
+    const base = new Date(d);
+    if (tot < 6 * 60) base.setDate(base.getDate() - 1); // Ajuste de día para la noche
+    
+    const dia = base.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return { turno, dia };
   }
 
@@ -26,18 +23,15 @@ const TrapUtils = (function() {
   }
 
   // ======= ÍNDICE DE TURNOS (Para lógica de Pendientes) =======
-  // Delegado a TrapTurnos
+  const TURNO_SEQ = ['Mañana', 'Tarde', 'Noche'];
   function turnoIndex(dia, turno) {
-    if (typeof TrapTurnos !== 'undefined') {
-      return TrapTurnos.turnoIndex(dia, turno);
-    }
-    // Fallback
     if (!dia || !turno) return 0;
     const partes = dia.split('/');
     if (partes.length !== 3) return 0;
+    // Usar UTC para evitar offsets de timezone
     const d = new Date(Date.UTC(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0])));
     const daysFrom = Math.floor(d.getTime() / 86400000);
-    const tIdx = ['Mañana', 'Tarde', 'Noche'].indexOf(turno);
+    const tIdx = TURNO_SEQ.indexOf(turno);
     return daysFrom * 3 + (tIdx >= 0 ? tIdx : 0);
   }
 
@@ -69,7 +63,8 @@ const TrapUtils = (function() {
     nowTurno,
     turnoIndex,
     normalizarFecha,
-    fmtHora
+    fmtHora,
+    TURNO_SEQ
   };
 
 })();

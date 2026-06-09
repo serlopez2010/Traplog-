@@ -9,7 +9,6 @@
 <meta name="theme-color" content="#0a0f1e">
 <title>TRAPLOG</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
@@ -18,10 +17,12 @@
 <!-- Módulos Limpios -->
 <script src="db.js"></script>
 <script src="js/data.js"></script>
+<script src="js/turnos.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/wizard.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/process.js"></script>
+<script src="js/zafra.js"></script>
 </head>
 
 <!-- LOGIN -->
@@ -83,6 +84,61 @@
   </div>
 </div>
 
+
+<!-- MODAL CONFIGURAR ZAFRA -->
+<div class="modal-overlay" id="modal-zafra">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-title">⚙️ CONFIGURAR ZAFRA</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Define el periodo productivo para los calculos de KPI.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="field-group" style="margin-bottom:0">
+        <label style="font-size:9px">MES INICIO</label>
+        <select id="zafra-ini-mes" style="font-size:12px;padding:8px">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5" selected>Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div class="field-group" style="margin-bottom:0">
+        <label style="font-size:9px">DIA INICIO</label>
+        <input type="number" id="zafra-ini-dia" value="1" min="1" max="31" style="font-size:12px;padding:8px">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="field-group" style="margin-bottom:0">
+        <label style="font-size:9px">MES FIN</label>
+        <select id="zafra-fin-mes" style="font-size:12px;padding:8px">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12" selected>Diciembre</option>
+        </select>
+      </div>
+      <div class="field-group" style="margin-bottom:0">
+        <label style="font-size:9px">DIA FIN</label>
+        <input type="number" id="zafra-fin-dia" value="31" min="1" max="31" style="font-size:12px;padding:8px">
+      </div>
+    </div>
+
+    <div class="field-group" style="margin-bottom:14px">
+      <label class="chk-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)">
+        <input type="checkbox" id="zafra-habilitado" checked style="width:auto">
+        Filtrar KPIs por periodo de zafra
+      </label>
+    </div>
+
+    <div id="zafra-resumen" style="font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-bottom:14px;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)"></div>
+
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-secondary" onclick="cerrarModalZafra()">CANCELAR</button>
+      <button class="btn btn-ok" onclick="guardarZafra()">✔ GUARDAR</button>
+    </div>
+  </div>
+</div>
+
 <div id="app">
   <!-- HEADER -->
   <div class="header">
@@ -97,7 +153,7 @@
       <div class="header-time" id="clock">--:--:--</div>
       <div class="header-date" id="dateline">---</div>
       <div class="header-turno-wrap"><div class="turno-chip" id="hdr-turno">—</div></div>
-      <!-- BOTÓN REFRESCAR EN HEADER -->
+      <div class="header-turno-wrap" id="zafra-badge-wrap" style="display:none"><div class="turno-chip" id="zafra-badge" style="background:rgba(255,107,53,.15);color:var(--accent2);border-color:rgba(255,107,53,.4);font-size:9px">ZAFRA</div></div>
       <button id="btn-refresh-header" onclick="manualRefresh()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;display:none;margin-left:8px">🔄</button>
     </div>
   </div>
@@ -119,7 +175,7 @@
   </div>
 
   <!-- WIZARD INTELIGENTE -->
-  <div class="screen" id="screen-wizard" style="padding-bottom:20px;">
+  <div class="screen" id="screen-wizard" style="padding-bottom:90px;">
     <div class="section-label" id="wizard-title">PASO 1</div>
     <div id="wizard-content"></div>
     <div class="btn-row" style="margin-top:20px">
@@ -134,8 +190,8 @@
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
       <div class="section-label" style="margin-top:0">FILTROS</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <div><label style="font-size:9px">DESDE</label><input type="date" id="flt-desde" oninput="renderEventosFiltrados()" style="font-size:12px;padding:7px 8px"></div>
-        <div><label style="font-size:9px">HASTA</label><input type="date" id="flt-hasta" oninput="renderEventosFiltrados()" style="font-size:12px;padding:7px 8px"></div>
+        <div><label style="font-size:9px">DESDE</label><input type="date" id="flt-desde" oninput="onFechaManual()" style="font-size:12px;padding:7px 8px"></div>
+        <div><label style="font-size:9px">HASTA</label><input type="date" id="flt-hasta" oninput="onFechaManual()" style="font-size:12px;padding:7px 8px"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div><label style="font-size:9px">LINEA</label>
@@ -159,147 +215,115 @@
           <option value="">Todos los equipos</option>
         </select>
       </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="filtroRapido('hoy')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">HOY</button>
-        <button onclick="filtroRapido('semana')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">7 DÍAS</button>
-        <button onclick="filtroRapido('mes')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">30 DÍAS</button>
-        <button onclick="filtroRapido('todo')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">TODO</button>
-        <button onclick="manualRefresh()" style="flex:1;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">🔄 REFRESCAR</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="filtroRapido('turno_actual')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">📅 TURNO ACTUAL</button>
+        <button onclick="filtroRapido('turno_anterior')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">🔄 TURNO ANTERIOR</button>
+        <button onclick="filtroRapido('7dias')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">📊 7 DÍAS</button>
+        <button onclick="filtroRapido('30dias')" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">📈 30 DÍAS</button>
+        <button onclick="imprimirReporte()" style="flex:1;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);color:#4caf50;border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">🖨️ IMPRIMIR</button>
+      </div>
+      <div style="margin-top:8px">
+        <button onclick="filtroRapido('todo')" style="width:100%;background:transparent;border:1px dashed var(--border);color:var(--text2);border-radius:6px;padding:6px;font-family:var(--mono);font-size:9px;cursor:pointer">🧹 LIMPIAR TODOS LOS FILTROS</button>
       </div>
     </div>
     <div id="eventos-count" style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:10px"></div>
     <div id="eventos-list-all"></div>
   </div>
 
-<!-- PANTALLA DE MONITOREO DE PROCESO -->
-<div class="screen" id="screen-proceso">
-  <div class="turno-banner">
-    <div class="turno-title" id="proceso-turno-text">Cargando turno...</div>
-    <div class="turno-sub">📊 Modificá los datos que cambiaron y guardá</div>
-  </div>
+  <!-- PANTALLA DE MONITOREO DE PROCESO -->
+  <div class="screen" id="screen-proceso" style="padding-bottom: 90px;"></div>
+    <div class="turno-banner">
+      <div class="turno-title" id="proceso-turno-text">Cargando turno...</div>
+      <div class="turno-sub">📊 Modificá los datos que cambiaron y guardá</div>
+    </div>
 
-  <!-- ACORDEÓN DE LÍNEAS -->
-  <div id="proceso-acordeon">
-    
-    <!-- TARJETA T1 -->
-    <div class="proc-acordeon-item" data-linea="T1">
-      <div class="proc-acordeon-header" style="border-left: 5px solid #1976D2;" onclick="TrapProcess.toggleAcordeon('T1')">
-        <span>🟦 TRAPICHE 1</span>
-        <span class="proc-acordeon-arrow">▼</span>
+    <div id="proceso-acordeon">
+      <div class="proc-acordeon-item" data-linea="T1">
+        <div class="proc-acordeon-header" style="border-left: 5px solid #1976D2;" onclick="TrapProcess.toggleAcordeon('T1')">
+          <span>🟦 TRAPICHE 1</span>
+          <span class="proc-acordeon-arrow">▼</span>
+        </div>
+        <div class="proc-acordeon-body" id="proc-body-t1">
+          <div class="field-group"><label>💧 CAUDAL AGUA (m³/h)</label><input type="number" id="proc-caudal-t1" step="0.1" placeholder="Ej: 125.5"></div>
+          <div class="field-group"><label>📍 INGRESO AGUA IMBIBICIÓN</label><select id="proc-ingreso-t1"><option value="">Seleccionar molino</option><option value="Molino 1">Molino 1</option><option value="Molino 2">Molino 2</option><option value="Molino 3">Molino 3</option><option value="Molino 4">Molino 4</option><option value="Molino 5">Molino 5</option><option value="Molino 6">Molino 6</option></select></div>
+          <div class="proc-vel-grid"><label class="proc-vel-title">⚙️ VELOCIDADES (RPM)</label>
+            <div class="field-group field-sm"><label>M1</label><input type="number" id="proc-vel-t1-m1" step="0.5"></div>
+            <div class="field-group field-sm"><label>M2</label><input type="number" id="proc-vel-t1-m2" step="0.5"></div>
+            <div class="field-group field-sm"><label>M3</label><input type="number" id="proc-vel-t1-m3" step="0.5"></div>
+            <div class="field-group field-sm"><label>M4</label><input type="number" id="proc-vel-t1-m4" step="0.5"></div>
+            <div class="field-group field-sm"><label>M5</label><input type="number" id="proc-vel-t1-m5" step="0.5"></div>
+            <div class="field-group field-sm"><label>M6</label><input type="number" id="proc-vel-t1-m6" step="0.5"></div>
+          </div>
+          <div class="field-group"><label>🛢️ ACEITE TRANSMISIÓN (L)</label><input type="number" id="proc-aceite-trans-t1" step="0.5"></div>
+          <div class="field-group"><label>🛢️ ACEITE MOLINOS (L)</label><input type="number" id="proc-aceite-mol-t1" step="0.5"></div>
+          <div class="field-group"><label>⚡ KILOS ELECTRODO (kg)</label><input type="number" id="proc-electrodo-t1" step="0.5"></div>
+          <div class="proc-rellenos-section"><label>🔧 RELLENO DE CILINDROS</label><div id="proc-rellenos-t1" class="proc-rellenos-container"></div><button type="button" class="btn btn-secondary btn-sm" onclick="TrapProcess.addRelleno('T1')">+ Agregar Relleno</button></div>
+        </div>
       </div>
-      <div class="proc-acordeon-body" id="proc-body-t1">
-        <div class="field-group">
-          <label>💧 CAUDAL AGUA (m³/h)</label>
-          <input type="number" id="proc-caudal-t1" step="0.1" placeholder="Ej: 125.5">
+
+      <div class="proc-acordeon-item" data-linea="T2">
+        <div class="proc-acordeon-header" style="border-left: 5px solid #388E3C;" onclick="TrapProcess.toggleAcordeon('T2')">
+          <span>🟩 TRAPICHE 2</span>
+          <span class="proc-acordeon-arrow">▼</span>
         </div>
-        <div class="field-group">
-          <label>📍 INGRESO AGUA IMBIBICIÓN</label>
-          <select id="proc-ingreso-t1">
-            <option value="">Seleccionar molino</option>
-            <option value="Molino 1">Molino 1</option><option value="Molino 2">Molino 2</option>
-            <option value="Molino 3">Molino 3</option><option value="Molino 4">Molino 4</option>
-            <option value="Molino 5">Molino 5</option><option value="Molino 6">Molino 6</option>
-          </select>
+        <div class="proc-acordeon-body" id="proc-body-t2">
+          <div class="field-group"><label>💧 CAUDAL AGUA (m³/h)</label><input type="number" id="proc-caudal-t2" step="0.1"></div>
+          <div class="field-group"><label>📍 INGRESO AGUA IMBIBICIÓN</label><select id="proc-ingreso-t2"><option value="">Seleccionar molino</option><option value="Molino 1">Molino 1</option><option value="Molino 2">Molino 2</option><option value="Molino 3">Molino 3</option><option value="Molino 4">Molino 4</option><option value="Molino 5">Molino 5</option><option value="Molino 6">Molino 6</option></select></div>
+          <div class="proc-vel-grid"><label class="proc-vel-title">⚙️ VELOCIDADES (RPM)</label>
+            <div class="field-group field-sm"><label>M1</label><input type="number" id="proc-vel-t2-m1" step="0.5"></div>
+            <div class="field-group field-sm"><label>M2</label><input type="number" id="proc-vel-t2-m2" step="0.5"></div>
+            <div class="field-group field-sm"><label>M3</label><input type="number" id="proc-vel-t2-m3" step="0.5"></div>
+            <div class="field-group field-sm"><label>M4</label><input type="number" id="proc-vel-t2-m4" step="0.5"></div>
+            <div class="field-group field-sm"><label>M5</label><input type="number" id="proc-vel-t2-m5" step="0.5"></div>
+            <div class="field-group field-sm"><label>M6</label><input type="number" id="proc-vel-t2-m6" step="0.5"></div>
+          </div>
+          <div class="field-group"><label>🛢️ ACEITE TRANSMISIÓN (L)</label><input type="number" id="proc-aceite-trans-t2" step="0.5"></div>
+          <div class="field-group"><label>🛢️ ACEITE MOLINOS (L)</label><input type="number" id="proc-aceite-mol-t2" step="0.5"></div>
+          <div class="field-group"><label>⚡ KILOS ELECTRODO (kg)</label><input type="number" id="proc-electrodo-t2" step="0.5"></div>
+          <div class="proc-rellenos-section"><label>🔧 RELLENO DE CILINDROS</label><div id="proc-rellenos-t2" class="proc-rellenos-container"></div><button type="button" class="btn btn-secondary btn-sm" onclick="TrapProcess.addRelleno('T2')">+ Agregar Relleno</button></div>
         </div>
-        <div class="proc-vel-grid">
-          <label class="proc-vel-title">⚙️ VELOCIDADES (RPM)</label>
-          <div class="field-group field-sm"><label>M1</label><input type="number" id="proc-vel-t1-m1" step="0.5"></div>
-          <div class="field-group field-sm"><label>M2</label><input type="number" id="proc-vel-t1-m2" step="0.5"></div>
-          <div class="field-group field-sm"><label>M3</label><input type="number" id="proc-vel-t1-m3" step="0.5"></div>
-          <div class="field-group field-sm"><label>M4</label><input type="number" id="proc-vel-t1-m4" step="0.5"></div>
-          <div class="field-group field-sm"><label>M5</label><input type="number" id="proc-vel-t1-m5" step="0.5"></div>
-          <div class="field-group field-sm"><label>M6</label><input type="number" id="proc-vel-t1-m6" step="0.5"></div>
+      </div>
+
+      <div class="proc-acordeon-item" data-linea="T3">
+        <div class="proc-acordeon-header" style="border-left: 5px solid #F57C00;" onclick="TrapProcess.toggleAcordeon('T3')">
+          <span>🟧 TRAPICHE 3</span>
+          <span class="proc-acordeon-arrow">▼</span>
         </div>
-        <div class="field-group">
-          <label>🛢️ ACEITE TRANSMISIÓN (L)</label>
-          <input type="number" id="proc-aceite-trans-t1" step="0.5">
-        </div>
-        <div class="field-group">
-          <label>🛢️ ACEITE MOLINOS (L)</label>
-          <input type="number" id="proc-aceite-mol-t1" step="0.5">
-        </div>
-        <div class="field-group">
-          <label>⚡ KILOS ELECTRODO (kg)</label>
-          <input type="number" id="proc-electrodo-t1" step="0.5">
-        </div>
-        
-        <div class="proc-rellenos-section">
-          <label>🔧 RELLENO DE CILINDROS</label>
-          <div id="proc-rellenos-t1" class="proc-rellenos-container"></div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="TrapProcess.addRelleno('T1')">+ Agregar Relleno</button>
+        <div class="proc-acordeon-body" id="proc-body-t3">
+          <div class="field-group"><label>💧 CAUDAL AGUA (m³/h)</label><input type="number" id="proc-caudal-t3" step="0.1"></div>
+          <div class="field-group"><label>📍 INGRESO AGUA IMBIBICIÓN</label><select id="proc-ingreso-t3"><option value="">Seleccionar molino</option><option value="Molino 1">Molino 1</option><option value="Molino 2">Molino 2</option><option value="Molino 3">Molino 3</option><option value="Molino 4">Molino 4</option><option value="Molino 5">Molino 5</option><option value="Molino 6">Molino 6</option></select></div>
+          <div class="proc-vel-grid"><label class="proc-vel-title">⚙️ VELOCIDADES (RPM)</label>
+            <div class="field-group field-sm"><label>M1</label><input type="number" id="proc-vel-t3-m1" step="0.5"></div>
+            <div class="field-group field-sm"><label>M2</label><input type="number" id="proc-vel-t3-m2" step="0.5"></div>
+            <div class="field-group field-sm"><label>M3</label><input type="number" id="proc-vel-t3-m3" step="0.5"></div>
+            <div class="field-group field-sm"><label>M4</label><input type="number" id="proc-vel-t3-m4" step="0.5"></div>
+            <div class="field-group field-sm"><label>M5</label><input type="number" id="proc-vel-t3-m5" step="0.5"></div>
+            <div class="field-group field-sm"><label>M6</label><input type="number" id="proc-vel-t3-m6" step="0.5"></div>
+          </div>
+          <div class="field-group"><label>🛢️ ACEITE TRANSMISIÓN (L)</label><input type="number" id="proc-aceite-trans-t3" step="0.5"></div>
+          <div class="field-group"><label>🛢️ ACEITE MOLINOS (L)</label><input type="number" id="proc-aceite-mol-t3" step="0.5"></div>
+          <div class="field-group"><label>⚡ KILOS ELECTRODO (kg)</label><input type="number" id="proc-electrodo-t3" step="0.5"></div>
+          <div class="proc-rellenos-section"><label>🔧 RELLENO DE CILINDROS</label><div id="proc-rellenos-t3" class="proc-rellenos-container"></div><button type="button" class="btn btn-secondary btn-sm" onclick="TrapProcess.addRelleno('T3')">+ Agregar Relleno</button></div>
         </div>
       </div>
     </div>
 
-    <!-- TARJETA T2 -->
-    <div class="proc-acordeon-item" data-linea="T2">
-      <div class="proc-acordeon-header" style="border-left: 5px solid #388E3C;" onclick="TrapProcess.toggleAcordeon('T2')">
-        <span>🟩 TRAPICHE 2</span>
-        <span class="proc-acordeon-arrow">▼</span>
+    <div style="margin-top: 15px;">
+      <div class="field-group">
+        <label>📝 OBSERVACIONES</label>
+        <textarea id="proc-obs" rows="2" placeholder="Ej: Presión de agua baja al inicio del turno..."></textarea>
       </div>
-      <div class="proc-acordeon-body" id="proc-body-t2">
-        <!-- MISMA ESTRUCTURA QUE T1 PERO CON IDS T2 -->
-        <div class="field-group"><label>💧 CAUDAL AGUA (m³/h)</label><input type="number" id="proc-caudal-t2" step="0.1"></div>
-        <div class="field-group"><label>📍 INGRESO AGUA IMBIBICIÓN</label><select id="proc-ingreso-t2"><option value="">Seleccionar molino</option><option value="Molino 1">Molino 1</option><option value="Molino 2">Molino 2</option><option value="Molino 3">Molino 3</option><option value="Molino 4">Molino 4</option><option value="Molino 5">Molino 5</option><option value="Molino 6">Molino 6</option></select></div>
-        <div class="proc-vel-grid"><label class="proc-vel-title">⚙️ VELOCIDADES (RPM)</label>
-          <div class="field-group field-sm"><label>M1</label><input type="number" id="proc-vel-t2-m1" step="0.5"></div>
-          <div class="field-group field-sm"><label>M2</label><input type="number" id="proc-vel-t2-m2" step="0.5"></div>
-          <div class="field-group field-sm"><label>M3</label><input type="number" id="proc-vel-t2-m3" step="0.5"></div>
-          <div class="field-group field-sm"><label>M4</label><input type="number" id="proc-vel-t2-m4" step="0.5"></div>
-          <div class="field-group field-sm"><label>M5</label><input type="number" id="proc-vel-t2-m5" step="0.5"></div>
-          <div class="field-group field-sm"><label>M6</label><input type="number" id="proc-vel-t2-m6" step="0.5"></div>
-        </div>
-        <div class="field-group"><label>🛢️ ACEITE TRANSMISIÓN (L)</label><input type="number" id="proc-aceite-trans-t2" step="0.5"></div>
-        <div class="field-group"><label>🛢️ ACEITE MOLINOS (L)</label><input type="number" id="proc-aceite-mol-t2" step="0.5"></div>
-        <div class="field-group"><label>⚡ KILOS ELECTRODO (kg)</label><input type="number" id="proc-electrodo-t2" step="0.5"></div>
-        <div class="proc-rellenos-section"><label>🔧 RELLENO DE CILINDROS</label><div id="proc-rellenos-t2" class="proc-rellenos-container"></div><button type="button" class="btn btn-secondary btn-sm" onclick="TrapProcess.addRelleno('T2')">+ Agregar Relleno</button></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-guardar-proceso">💾 GUARDAR DATOS DEL TURNO</button>
+        <button class="btn btn-secondary" id="btn-ver-historial">📈 VER HISTORIAL</button>
       </div>
     </div>
 
-    <!-- TARJETA T3 -->
-    <div class="proc-acordeon-item" data-linea="T3">
-      <div class="proc-acordeon-header" style="border-left: 5px solid #F57C00;" onclick="TrapProcess.toggleAcordeon('T3')">
-        <span>🟧 TRAPICHE 3</span>
-        <span class="proc-acordeon-arrow">▼</span>
-      </div>
-      <div class="proc-acordeon-body" id="proc-body-t3">
-        <!-- MISMA ESTRUCTURA QUE T1 PERO CON IDS T3 -->
-        <div class="field-group"><label>💧 CAUDAL AGUA (m³/h)</label><input type="number" id="proc-caudal-t3" step="0.1"></div>
-        <div class="field-group"><label>📍 INGRESO AGUA IMBIBICIÓN</label><select id="proc-ingreso-t3"><option value="">Seleccionar molino</option><option value="Molino 1">Molino 1</option><option value="Molino 2">Molino 2</option><option value="Molino 3">Molino 3</option><option value="Molino 4">Molino 4</option><option value="Molino 5">Molino 5</option><option value="Molino 6">Molino 6</option></select></div>
-        <div class="proc-vel-grid"><label class="proc-vel-title">⚙️ VELOCIDADES (RPM)</label>
-          <div class="field-group field-sm"><label>M1</label><input type="number" id="proc-vel-t3-m1" step="0.5"></div>
-          <div class="field-group field-sm"><label>M2</label><input type="number" id="proc-vel-t3-m2" step="0.5"></div>
-          <div class="field-group field-sm"><label>M3</label><input type="number" id="proc-vel-t3-m3" step="0.5"></div>
-          <div class="field-group field-sm"><label>M4</label><input type="number" id="proc-vel-t3-m4" step="0.5"></div>
-          <div class="field-group field-sm"><label>M5</label><input type="number" id="proc-vel-t3-m5" step="0.5"></div>
-          <div class="field-group field-sm"><label>M6</label><input type="number" id="proc-vel-t3-m6" step="0.5"></div>
-        </div>
-        <div class="field-group"><label>🛢️ ACEITE TRANSMISIÓN (L)</label><input type="number" id="proc-aceite-trans-t3" step="0.5"></div>
-        <div class="field-group"><label>🛢️ ACEITE MOLINOS (L)</label><input type="number" id="proc-aceite-mol-t3" step="0.5"></div>
-        <div class="field-group"><label>⚡ KILOS ELECTRODO (kg)</label><input type="number" id="proc-electrodo-t3" step="0.5"></div>
-        <div class="proc-rellenos-section"><label>🔧 RELLENO DE CILINDROS</label><div id="proc-rellenos-t3" class="proc-rellenos-container"></div><button type="button" class="btn btn-secondary btn-sm" onclick="TrapProcess.addRelleno('T3')">+ Agregar Relleno</button></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- CAMPOS GLOBALES -->
-  <div style="margin-top: 15px;">
-    <div class="field-group">
-      <label>📝 OBSERVACIONES</label>
-      <textarea id="proc-obs" rows="2" placeholder="Ej: Presión de agua baja al inicio del turno..."></textarea>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" id="btn-guardar-proceso">💾 GUARDAR DATOS DEL TURNO</button>
-      <button class="btn btn-secondary" id="btn-ver-historial">📈 VER HISTORIAL</button>
+    <div id="historial-proceso" style="display: none;">
+      <div class="section-label">📋 REGISTROS ANTERIORES</div>
+      <div id="historial-lista" class="historial-grid"></div>
     </div>
   </div>
-
-  <div id="historial-proceso" style="display: none;">
-    <div class="section-label">📋 REGISTROS ANTERIORES</div>
-    <div id="historial-lista" class="historial-grid"></div>
-  </div>
-</div>
 
   <!-- EXPORTAR -->
   <div class="screen" id="screen-export">
@@ -331,6 +355,15 @@
     </div>
     <div class="section-label">USUARIOS REGISTRADOS</div>
     <div id="user-list"></div>
+
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="section-label">CONFIGURACION DEL SISTEMA</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px;margin-top:10px">
+        <div style="font-weight:600;margin-bottom:8px;font-size:14px">⚙️ Periodo de Zafra</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px">Define las fechas de inicio y fin de la campana productiva para que los KPIs del dashboard se calculen correctamente.</div>
+        <button class="btn btn-primary" onclick="abrirModalZafra()" style="margin-top:0">CONFIGURAR ZAFRA</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -345,12 +378,9 @@
     <span class="nav-label">EVENTOS</span>
   </button>
   <button class="nav-btn" id="nav-proceso" onclick="showScreen('proceso')">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M2 12h20M12 2v20M4 4l16 16M4 20L20 4"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-  <span class="nav-label">PROCESO</span>
-</button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20M4 4l16 16M4 20L20 4"/><circle cx="12" cy="12" r="3"/></svg>
+    <span class="nav-label">PROCESO</span>
+  </button>
   <button class="nav-btn" id="nav-dash" onclick="abrirDashboard()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     <span class="nav-label">DASH</span>
@@ -380,6 +410,8 @@
 // ------- ESTADO GLOBAL -------
 let eventos = JSON.parse(localStorage.getItem('vitacora_trapiches') || '[]');
 let currentUser = null;
+let _filtroTurno = null; // Para filtro de turno en eventos
+let _filtroDia = null;   // Para filtro de día de fábrica en eventos
 
 // ------- HELPERS RAPIDOS -------
 function lineaColor(l) { return TrapData.LINEA_COLOR[l] || '#7a9cc8'; }
@@ -414,6 +446,8 @@ async function doLogin() {
     document.getElementById('udot').className = 'user-dot dot-' + currentUser.role;
     document.getElementById('nav-admin').style.display = currentUser.role === 'admin' ? 'flex' : 'none';
     document.getElementById('btn-refresh-header').style.display = 'flex';
+    await TrapZafra.syncFromDB();   
+    renderZafraBadge();
     renderHome();
   } catch (err) {
     document.getElementById('login-error').style.display = 'block';
@@ -430,9 +464,10 @@ function doLogout() {
   document.getElementById('login-pass').value = '';
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('btn-refresh-header').style.display = 'none';
+  _filtroTurno = null;
 }
 
-// ------- REFRESCAR DATOS (SIN RECARGAR PÁGINA) -------
+// ------- REFRESCAR DATOS -------
 async function manualRefresh() {
   const btn = document.getElementById('btn-refresh-header') || event.target;
   const originalText = btn.textContent;
@@ -443,12 +478,9 @@ async function manualRefresh() {
     if (res.ok) {
       eventos = res.eventos;
       localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
-      
-      // Re-renderizar pantalla actual
       const activeScreen = document.querySelector('.screen.active')?.id;
       if (activeScreen === 'screen-home') renderHome();
       else if (activeScreen === 'screen-pareto') renderEventosFiltrados();
-      
       toast('✅ Datos sincronizados');
     } else {
       toast('⚠️ Sin conexión — datos locales');
@@ -461,13 +493,14 @@ async function manualRefresh() {
   }
 }
 
-// ------- CLOCK (Usa TrapUtils) -------
+// ------- CLOCK -------
 function updateClock() {
   const n = new Date();
   document.getElementById('clock').textContent = n.toLocaleTimeString('es-AR', { hour12: false });
   const dias = ['DOM','LUN','MAR','MIE','JUE','VIE','SAB'], meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
   document.getElementById('dateline').textContent = `${dias[n.getDay()]} ${n.getDate()} ${meses[n.getMonth()]} ${n.getFullYear()}`;
-  const { turno } = TrapUtils.nowTurno();
+  const turnoInfo = (typeof TrapTurnos !== 'undefined' && TrapTurnos.now) ? TrapTurnos.now() : TrapUtils.nowTurno();
+  const turno = turnoInfo.turno;
   const icons = { Mañana: '🌅', Tarde: '🌇', Noche: '🌙' };
   document.getElementById('hdr-turno').textContent = `${icons[turno]} ${turno.toUpperCase()}`;
 }
@@ -502,7 +535,9 @@ function tryNew() {
 
 // ------- PANTALLA HOME -------
 function renderHome() {
-  const { dia, turno } = TrapUtils.nowTurno();
+  const turnoInfo = (typeof TrapTurnos !== 'undefined' && TrapTurnos.now) ? TrapTurnos.now() : TrapUtils.nowTurno();
+  const dia = turnoInfo.dia;
+  const turno = turnoInfo.turno;
   const turnoActual = eventos.filter(e => e.fecha_fabrica === dia && e.turno === turno);
   const paradas = turnoActual.filter(e => e.impacto === 'parada');
   const min = paradas.reduce((s, e) => s + (Number(e.duracion_min) || 0), 0);
@@ -542,7 +577,7 @@ function buildEventCard(e, canEdit, contexto = 'home') {
   return `<div class="event-card ${e.impacto}" style="border-left:4px solid ${lc}">
     <div class="event-header">
       <div style="flex:1;min-width:0">
-        <div class="event-linea">${lineaBadge(e.linea)}<span style="color:var(--text2);font-size:10px">${infoExtra}</span></div>
+        <div class="event-linea">${lineaBadge(e.linea)}<<span style="color:var(--text2);font-size:10px">${infoExtra}</span></div>
         <div class="event-equipo">${e.equipo}</div>
         <div class="event-comp">${e.componente || ''} · ${e.tipo_evento || ''}</div>
       </div>
@@ -558,7 +593,9 @@ function buildEventCard(e, canEdit, contexto = 'home') {
 
 // ------- PENDIENTES -------
 function renderPendientes() {
-  const { dia, turno } = TrapUtils.nowTurno();
+  const turnoInfo = (typeof TrapTurnos !== 'undefined' && TrapTurnos.now) ? TrapTurnos.now() : TrapUtils.nowTurno();
+  const dia = turnoInfo.dia;
+  const turno = turnoInfo.turno;
   const idxActual = TrapUtils.turnoIndex(dia, turno);
   const pendientes = eventos.filter(e => {
     if (e.fecha_fabrica === dia && e.turno === turno) return false;
@@ -586,9 +623,9 @@ function renderPendientes() {
       const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id})">CERRAR</button>` : '';
       return `<div class="event-card parada" style="border-left:4px solid var(--danger);border:1px solid rgba(255,23,68,.4)">
         <div class="event-header"><div>
-          <div class="event-linea">${lineaBadge(e.linea)}<span style="color:var(--text2);font-size:10px">${e.fecha_fabrica} · ${e.turno||''}</span></div>
+          <div class="event-linea">${lineaBadge(e.linea)}<<span style="color:var(--text2);font-size:10px">${e.fecha_fabrica} · ${e.turno||''}</span></div>
           <div class="event-equipo">${e.equipo}</div><div class="event-comp">${e.componente||''} · ${e.tipo_evento||''}</div>
-        </div><div class="event-time">${ti} -><div class="event-dur" style="color:var(--danger)">ABIERTA</div>
+        </div><div class="event-time">${ti} -><<div class="event-dur" style="color:var(--danger)">ABIERTA</div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--warn)">${turnosPasados} turno(s)</div></div></div>
         <div class="event-desc">${e.descripcion}</div>
         <div class="event-footer"><span class="badge badge-danger">PARADA ABIERTA</span><div class="event-actions">${cb}</div></div>
@@ -603,7 +640,7 @@ function renderPendientes() {
     const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});event.stopPropagation()">OK</button>` : '';
     const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 10px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">CERRAR Y NUEVO</button>` : '';
     return `<div class="compact-card" style="border-left-color:${borderColor}" onclick="toggleCompact(this)">
-      <div class="compact-row">${lineaBadge(e.linea)}<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span><span class="compact-expand-hint">▼</span></div>
+      <div class="compact-row">${lineaBadge(e.linea)}<<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span><span class="compact-expand-hint">▼</span></div>
       <div class="compact-desc">${e.descripcion}</div>
       <div class="compact-body">
         <div style="font-size:12px;color:var(--text2);margin:8px 0;line-height:1.5">${e.descripcion}</div>
@@ -633,6 +670,152 @@ function cerrarYNuevo(id) {
   toast('Pendiente cerrado — Completá el nuevo evento');
 }
 
+// ------- FILTROS RÁPIDOS (NUEVA VERSIÓN) -------
+// Calcular turno y día de fábrica REAL de un evento a partir de su inicio_evento
+// Usa TrapTurnos como fuente única de verdad (NO el campo turno de la base)
+function getTurnoRealEvento(inicio_evento) {
+  if (!inicio_evento) return null;
+  const d = new Date(inicio_evento);
+  if (isNaN(d)) return null;
+
+  // Usar TrapTurnos si está disponible
+  if (typeof TrapTurnos !== 'undefined') {
+    if (TrapTurnos.getTurnoActual && TrapTurnos.getDiaFabrica) {
+      return {
+        turno: TrapTurnos.getTurnoActual(d),
+        dia: TrapTurnos.getDiaFabrica(d)
+      };
+    }
+  }
+
+  // Fallback (misma lógica que turnos.js)
+  const h = d.getHours();
+  const turno = h >= 6 && h < 14 ? 'Mañana' : h >= 14 && h < 22 ? 'Tarde' : 'Noche';
+
+  // Día de fábrica
+  const año = d.getFullYear();
+  const mes = d.getMonth();
+  const dia = d.getDate();
+  const hora = d.getHours();
+  let diaFabrica;
+  if (hora < 6) {
+    const ayer = new Date(año, mes, dia - 1);
+    diaFabrica = `${String(ayer.getDate()).padStart(2,'0')}/${String(ayer.getMonth()+1).padStart(2,'0')}/${ayer.getFullYear()}`;
+  } else {
+    diaFabrica = `${String(dia).padStart(2,'0')}/${String(mes+1).padStart(2,'0')}/${año}`;
+  }
+
+  return { turno, dia: diaFabrica };
+}
+
+// Indicador visual de filtro de turno activo
+function updateTurnoFilterChip() {
+  let chip = document.getElementById('turno-filter-chip');
+  if (!chip) {
+    chip = document.createElement('div');
+    chip.id = 'turno-filter-chip';
+    chip.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--accent);background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:4px;padding:2px 8px;margin-left:8px;display:inline-block;';
+    const count = document.getElementById('eventos-count');
+    if (count) count.parentNode.insertBefore(chip, count.nextSibling);
+  }
+  if (_filtroTurno) {
+    chip.textContent = `🕒 TURNO: ${_filtroTurno.toUpperCase()}`;
+    chip.style.display = 'inline-block';
+  } else {
+    chip.style.display = 'none';
+  }
+}
+
+// Debug: mostrar info de turno detectado
+function updateTurnoDebug() {
+  let debug = document.getElementById('turno-debug');
+  if (!debug) {
+    debug = document.createElement('div');
+    debug.id = 'turno-debug';
+    debug.style.cssText = 'font-family:var(--mono);font-size:9px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;margin-bottom:8px;';
+    const pareja = document.getElementById('screen-pareto').querySelector('div[style*="background:var(--surface)"]');
+    if (pareja) pareja.insertBefore(debug, pareja.firstChild);
+  }
+  const info = (typeof TrapTurnos !== 'undefined' && TrapTurnos.now) ? TrapTurnos.now() : TrapUtils.nowTurno();
+  debug.innerHTML = `🕒 Turno detectado: <strong style="color:var(--accent)">${info.turno}</strong> · 📅 Día fábrica: <strong style="color:var(--accent)">${info.dia}</strong> · ⏰ Hora real: ${new Date().toLocaleTimeString('es-AR',{hour12:false})}`;
+}
+
+function filtroRapido(tipo) {
+  const desde = document.getElementById('flt-desde');
+  const hasta = document.getElementById('flt-hasta');
+
+  // Fuente única de verdad: TrapTurnos
+  const turnoInfo = (typeof TrapTurnos !== 'undefined' && TrapTurnos.now) ? TrapTurnos.now() : TrapUtils.nowTurno();
+
+  if (tipo === 'turno_actual' || tipo === 'hoy') {
+    desde.value = '';  // No filtramos por fecha, filtramos por turno real
+    hasta.value = '';
+    _filtroTurno = turnoInfo.turno;
+    _filtroDia = turnoInfo.dia;
+    toast(`📅 Turno ${turnoInfo.turno} · ${turnoInfo.dia}`);
+  }
+  else if (tipo === 'turno_anterior') {
+    let ant;
+    if (typeof TrapTurnos !== 'undefined' && TrapTurnos.getFechaTurnoAnterior) {
+      ant = TrapTurnos.getFechaTurnoAnterior(turnoInfo.turno, turnoInfo.dia);
+    } else {
+      const [dd, mm, yyyy] = turnoInfo.dia.split('/').map(Number);
+      const fecha = new Date(yyyy, mm - 1, dd);
+      if (turnoInfo.turno === 'Mañana') {
+        fecha.setDate(fecha.getDate() - 1);
+        ant = { turno: 'Noche', dia: `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')}/${fecha.getFullYear()}` };
+      } else {
+        ant = { turno: turnoInfo.turno === 'Tarde' ? 'Mañana' : 'Tarde', dia: turnoInfo.dia };
+      }
+    }
+    desde.value = '';
+    hasta.value = '';
+    _filtroTurno = ant.turno;
+    _filtroDia = ant.dia;
+    toast(`🔄 Turno ${ant.turno} · ${ant.dia}`);
+  }
+  else if (tipo === '7dias') {
+    const hoy = new Date();
+    const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
+    desde.value = hace7.toISOString().slice(0, 10);
+    hasta.value = hoy.toISOString().slice(0, 10);
+    _filtroTurno = null;
+    _filtroDia = null;
+    toast('📊 Últimos 7 días');
+  }
+  else if (tipo === '30dias') {
+    const hoy = new Date();
+    const hace30 = new Date(); hace30.setDate(hoy.getDate() - 30);
+    desde.value = hace30.toISOString().slice(0, 10);
+    hasta.value = hoy.toISOString().slice(0, 10);
+    _filtroTurno = null;
+    _filtroDia = null;
+    toast('📈 Últimos 30 días');
+  }
+  else if (tipo === 'todo') {
+    desde.value = '';
+    hasta.value = '';
+    document.getElementById('flt-linea').value = '';
+    document.getElementById('flt-impacto').value = '';
+    document.getElementById('flt-equipo').value = '';
+    _filtroTurno = null;
+    _filtroDia = null;
+    toast('📋 Todos los eventos');
+  }
+
+  updateTurnoFilterChip();
+  updateTurnoDebug();
+  renderEventosFiltrados();
+}
+
+// Limpiar filtro de turno cuando el usuario cambia fechas manualmente
+function onFechaManual() {
+  _filtroTurno = null;
+  _filtroDia = null;
+  updateTurnoFilterChip();
+  renderEventosFiltrados();
+}
+
 // ------- FILTROS Y EVENTOS -------
 function initEventosScreen() {
   const equipos = [...new Set(eventos.map(e => e.equipo).filter(Boolean))].sort();
@@ -640,32 +823,66 @@ function initEventosScreen() {
   const valActual = sel.value;
   sel.innerHTML = '<option value="">Todos los equipos</option>';
   equipos.forEach(eq => { const o = document.createElement('option'); o.value = eq; o.textContent = eq; sel.appendChild(o); });
-  if (valActual) sel.value = valActual;
-  if (!document.getElementById('flt-desde').value) filtroRapido('mes');
-  else renderEventosFiltrados();
+  if (valActual && equipos.includes(valActual)) sel.value = valActual;
+
+  updateTurnoDebug();
+
+  if (!document.getElementById('flt-desde').value) {
+    filtroRapido('turno_actual');
+  } else {
+    updateTurnoFilterChip();
+    renderEventosFiltrados();
+  }
 }
 
-function filtroRapido(tipo) {
-  const hoy = new Date(); const fmt = d => d.toISOString().slice(0, 10);
-  const desde = document.getElementById('flt-desde'), hasta = document.getElementById('flt-hasta');
-  hasta.value = fmt(hoy);
-  if (tipo === 'hoy') desde.value = fmt(hoy);
-  else if (tipo === 'semana') { const d = new Date(hoy); d.setDate(d.getDate() - 7); desde.value = fmt(d); }
-  else if (tipo === 'mes') { const d = new Date(hoy); d.setDate(d.getDate() - 30); desde.value = fmt(d); }
-  else { desde.value = ''; hasta.value = ''; }
-  renderEventosFiltrados();
-}
-
-function renderEventosFiltrados() {
-  const desde = document.getElementById('flt-desde').value, hasta = document.getElementById('flt-hasta').value;
-  const linea = document.getElementById('flt-linea').value, impacto = document.getElementById('flt-impacto').value;
+// NUEVA FUNCIÓN: extrae la lógica de filtrado para reutilizarla
+function getEventosFiltrados() {
+  const desde = document.getElementById('flt-desde').value;
+  const hasta = document.getElementById('flt-hasta').value;
+  const linea = document.getElementById('flt-linea').value;
+  const impacto = document.getElementById('flt-impacto').value;
   const equipo = document.getElementById('flt-equipo').value;
+
   let filtrados = [...eventos].reverse();
-  if (desde) filtrados = filtrados.filter(e => { const ref = TrapUtils.normalizarFecha(e.inicio_evento) || TrapUtils.normalizarFecha(e.fecha_fabrica); return ref && ref >= desde; });
-  if (hasta) filtrados = filtrados.filter(e => { const ref = TrapUtils.normalizarFecha(e.inicio_evento) || TrapUtils.normalizarFecha(e.fecha_fabrica); return ref && ref <= hasta; });
+
+  // Filtro por fecha: usa inicio_evento, fallback a fecha_fabrica
+  if (desde) {
+    filtrados = filtrados.filter(e => {
+      let ref = TrapUtils.normalizarFecha(e.inicio_evento);
+      if (!ref) ref = TrapUtils.normalizarFecha(e.fecha_fabrica);
+      return ref && ref >= desde;
+    });
+  }
+  if (hasta) {
+    filtrados = filtrados.filter(e => {
+      let ref = TrapUtils.normalizarFecha(e.inicio_evento);
+      if (!ref) ref = TrapUtils.normalizarFecha(e.fecha_fabrica);
+      return ref && ref <= hasta;
+    });
+  }
+
+  // Filtro por turno: calcula el turno REAL de cada evento desde su inicio_evento
+  // NO usa el campo 'turno' de la base de datos (puede tener datos antiguos)
+  if (_filtroTurno && _filtroDia) {
+    filtrados = filtrados.filter(e => {
+      const real = getTurnoRealEvento(e.inicio_evento);
+      if (real) {
+        return real.turno === _filtroTurno && real.dia === _filtroDia;
+      }
+      // Fallback: si no hay inicio_evento, usar campo turno de la base
+      return e.turno === _filtroTurno && e.fecha_fabrica === _filtroDia;
+    });
+  }
+
   if (linea) filtrados = filtrados.filter(e => e.linea === linea);
   if (impacto) filtrados = filtrados.filter(e => e.impacto === impacto);
   if (equipo) filtrados = filtrados.filter(e => e.equipo === equipo);
+
+  return filtrados;
+}
+
+function renderEventosFiltrados() {
+  const filtrados = getEventosFiltrados();
 
   const count = document.getElementById('eventos-count');
   const paradas = filtrados.filter(e => e.impacto === 'parada');
@@ -673,7 +890,10 @@ function renderEventosFiltrados() {
   count.innerHTML = `${filtrados.length} EVENTOS · ${paradas.length} PARADAS · ${Math.round(minPerd)} MIN PERDIDOS`;
 
   const list = document.getElementById('eventos-list-all');
-  if (!filtrados.length) { list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Sin eventos con esos filtros.</div></div>`; return; }
+  if (!filtrados.length) { 
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Sin eventos con esos filtros.</div></div>`; 
+    return; 
+  }
   const canEdit = currentUser?.role !== 'viewer';
   list.innerHTML = filtrados.map(e => buildEventCard(e, canEdit, 'eventos')).join('');
 }
@@ -784,6 +1004,180 @@ function marcarExportado(id) {
   const e = eventos.find(x => x.id === id);
   if (e) { e._exported = true; localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos)); renderExport(); toast('Marcado como exportado'); }
 }
+
+// ------- IMPRIMIR REPORTE ESTILO TICKET TÉCNICO -------
+function imprimirReporte() {
+  const desde = document.getElementById('flt-desde').value;
+  const hasta = document.getElementById('flt-hasta').value;
+  const linea = document.getElementById('flt-linea').value;
+  const impacto = document.getElementById('flt-impacto').value;
+  const equipo = document.getElementById('flt-equipo').value;
+  
+  const filtrados = getEventosFiltrados();
+  
+  if (filtrados.length === 0) { toast('No hay eventos para imprimir'); return; }
+  
+  const fechaActual = new Date().toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const paradasFiltradas = filtrados.filter(e => e.impacto === 'parada');
+  const minutosPerdidos = paradasFiltradas.reduce((sum, e) => sum + (Number(e.duracion_min) || 0), 0);
+  const horasPerdidas = Math.floor(minutosPerdidos / 60);
+  const minsResto = minutosPerdidos % 60;
+  
+  const fmtHora = (iso) => { if (!iso) return '—'; return iso.slice(11, 16); };
+  
+  let html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>TRAPLOG - Reporte de Eventos</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Courier New', 'IBM Plex Mono', monospace; background: white; padding: 20px; color: #111; }
+      .report { max-width: 900px; margin: 0 auto; }
+      .header { text-align: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #000; }
+      .header h1 { font-size: 28px; letter-spacing: 4px; font-weight: bold; margin-bottom: 8px; }
+      .header .fecha { font-size: 11px; color: #444; margin-top: 5px; }
+      .filtros { background: #f5f5f5; padding: 10px 15px; margin-bottom: 25px; font-size: 10px; border-left: 4px solid #1976D2; font-family: monospace; }
+      .filtros span { display: inline-block; margin-right: 15px; }
+      .resumen { background: #e8f0fe; padding: 12px 15px; margin-bottom: 25px; font-size: 11px; font-weight: bold; text-align: center; border: 1px solid #ccc; }
+      .event-card-print { border: 1px solid #ccc; margin-bottom: 20px; background: white; page-break-inside: avoid; break-inside: avoid; }
+      .event-header-print { background: #f0f0f0; padding: 10px 12px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+      .event-linea-print { font-weight: bold; font-size: 13px; }
+      .badge-linea { background: #1976D2; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-right: 10px; }
+      .event-fecha-turno { font-size: 10px; color: #555; }
+      .event-time-print { font-family: monospace; font-size: 11px; font-weight: bold; }
+      .event-body-print { padding: 12px; }
+      .event-equipo { font-size: 15px; font-weight: bold; display: inline-block; margin-right: 10px; }
+      .event-comp { font-size: 12px; color: #555; display: inline-block; }
+      .event-desc { font-size: 11px; line-height: 1.5; margin: 12px 0; padding: 8px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; white-space: pre-wrap; }
+      .event-footer-print { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+      .badge-impacto { display: inline-block; padding: 4px 12px; font-size: 10px; font-weight: bold; letter-spacing: 1px; }
+      .badge-parada { background: #ff1744; color: white; }
+      .badge-sin-parada { background: #4caf50; color: white; }
+      .badge-sector { display: inline-block; padding: 2px 8px; font-size: 9px; background: #9e9e9e; color: white; margin-left: 5px; }
+      .duracion { font-size: 11px; font-family: monospace; color: #ff1744; font-weight: bold; }
+      .footer { margin-top: 30px; text-align: center; font-size: 9px; color: #888; border-top: 1px solid #ccc; padding-top: 15px; }
+      @media print { body { padding: 0; margin: 0; } .no-print { display: none; } .event-card-print { break-inside: avoid; page-break-inside: avoid; } }
+    </style>
+  </head>
+  <body>
+    <div class="report">
+      <div class="header">
+        <h1>TRAPLOG</h1>
+        <div>REPORTE DE EVENTOS</div>
+        <div class="fecha">${fechaActual}</div>
+      </div>
+      <div class="filtros">
+        <span>📅 ${desde ? `Desde: ${desde}` : 'Desde: inicio'}</span>
+        <span>📅 ${hasta ? `Hasta: ${hasta}` : 'Hasta: actualidad'}</span>
+        <span>📍 ${linea ? `Línea: ${linea}` : 'Línea: Todas'}</span>
+        ${equipo ? `<span>🔧 Equipo: ${equipo}</span>` : ''}
+        ${_filtroTurno ? `<span>🕒 Turno: ${_filtroTurno}</span>` : ''}
+        <span>🎯 ${impacto === 'parada' ? 'Solo paradas' : (impacto === 'sin-parada' ? 'Solo sin parada' : 'Todos')}</span>
+      </div>
+      <div class="resumen">
+        📋 TOTAL: ${filtrados.length} EVENTOS | 🛑 PARADAS: ${paradasFiltradas.length} | ⏱️ TIEMPO PERDIDO: ${horasPerdidas}h ${minsResto}min (${minutosPerdidos} min)
+      </div>
+  `;
+  
+  filtrados.forEach(e => {
+    const inicioHora = fmtHora(e.inicio_evento);
+    const finHora = e.fin_evento ? fmtHora(e.fin_evento) : '→';
+    const duracion = e.duracion_min ? `${e.duracion_min} min` : '';
+    const impactoClass = e.impacto === 'parada' ? 'badge-parada' : 'badge-sin-parada';
+    const impactoText = e.impacto === 'parada' ? 'PARADA' : 'SIN PARADA';
+    
+    html += `
+      <div class="event-card-print">
+        <div class="event-header-print">
+          <div class="event-linea-print">
+            <span class="badge-linea">${e.linea || 'T?'}</span>
+            <span style="font-size:11px">${e.equipo || ''}</span>
+          </div>
+          <div class="event-fecha-turno">${e.fecha_fabrica || ''} · ${e.turno || ''}</div>
+          <div class="event-time-print">${inicioHora} → ${finHora} ${duracion ? `<span class="duracion">(${duracion})</span>` : ''}</div>
+        </div>
+        <div class="event-body-print">
+          <div><span class="event-equipo">${e.equipo || ''}</span><span class="event-comp">${e.componente || ''} · ${e.tipo_evento || ''}</span></div>
+          <div class="event-desc">${(e.descripcion || '').replace(/\n/g, '<br>')}</div>
+          <div class="event-footer-print">
+            <div><span class="badge-impacto ${impactoClass}">${impactoText}</span>${e.sector ? `<span class="badge-sector">${e.sector}</span>` : ''}</div>
+            <div class="no-print"><button onclick="window.print()" style="padding:4px 12px;font-family:monospace;font-size:10px;">🖨️ IMPRIMIR</button></div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `<div class="footer"><p>TRAPLOG - Sistema de Registro de Eventos · Reporte generado el ${fechaActual}</p></div></div></body></html>`;
+  
+  const ventana = window.open('', '_blank');
+  ventana.document.write(html);
+  ventana.document.close();
+}
+
+// ------- ZAFRA / PERIODO PRODUCTIVO -------
+function abrirModalZafra() {
+  if (currentUser?.role !== 'admin') { document.getElementById('ro-overlay').classList.add('show'); return; }
+  const cfg = TrapZafra.getConfig();
+  document.getElementById('zafra-ini-mes').value = cfg.inicio.mes;
+  document.getElementById('zafra-ini-dia').value = cfg.inicio.dia;
+  document.getElementById('zafra-fin-mes').value = cfg.fin.mes;
+  document.getElementById('zafra-fin-dia').value = cfg.fin.dia;
+  document.getElementById('zafra-habilitado').checked = cfg.habilitado;
+
+  const res = TrapZafra.getResumen();
+  document.getElementById('zafra-resumen').innerHTML =
+    `<b>Periodo actual:</b> ${res.periodo}<br><b>Dias productivos:</b> ${res.dias} dias`;
+
+  document.getElementById('modal-zafra').classList.add('show');
+}
+
+function cerrarModalZafra() {
+  document.getElementById('modal-zafra').classList.remove('show');
+}
+
+function guardarZafra() {
+  const iniMes = parseInt(document.getElementById('zafra-ini-mes').value);
+  const iniDia = parseInt(document.getElementById('zafra-ini-dia').value);
+  const finMes = parseInt(document.getElementById('zafra-fin-mes').value);
+  const finDia = parseInt(document.getElementById('zafra-fin-dia').value);
+  const habilitado = document.getElementById('zafra-habilitado').checked;
+
+  // Validar dias segun mes
+  const diasPorMes = [0,31,29,31,30,31,30,31,31,30,31,30,31];
+  if (iniDia < 1 || iniDia > diasPorMes[iniMes]) { toast('Dia de inicio invalido para ese mes'); return; }
+  if (finDia < 1 || finDia > diasPorMes[finMes]) { toast('Dia de fin invalido para ese mes'); return; }
+
+  const cfg = {
+    anio: new Date().getFullYear(),
+    inicio: { mes: iniMes, dia: iniDia },
+    fin: { mes: finMes, dia: finDia },
+    habilitado: habilitado
+  };
+
+  TrapZafra.setConfig(cfg);
+  TrapZafra.syncToDB(); // intenta sync en background
+  cerrarModalZafra();
+  renderZafraBadge();
+  toast('Configuracion de zafra guardada');
+}
+
+function renderZafraBadge() {
+  const wrap = document.getElementById('zafra-badge-wrap');
+  const badge = document.getElementById('zafra-badge');
+  if (!wrap || !badge) return;
+  const txt = TrapZafra.getBadgeText();
+  badge.textContent = txt;
+  wrap.style.display = 'flex';
+}
+
+// Inicializar badge al cargar (aunque sin login)
+document.addEventListener('DOMContentLoaded', () => {
+  renderZafraBadge();
+});
+
 </script>
 </body>
 </html>

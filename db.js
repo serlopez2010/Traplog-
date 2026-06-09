@@ -4,7 +4,7 @@
 // Para migrar a Firebase en v0.5: reescribir solo este archivo
 // ============================================================
 
-const DB_URL = 'https://script.google.com/macros/s/AKfycbxdsUEiNCgkVFxWW07i27nyP7YJKwaqx5vhlwDhYknK35hxWFzpm910Lc3vQYJfyc3F5A/exec';
+const DB_URL = 'https://script.google.com/macros/s/AKfycbxytXvtGZ8C8d2TiJCcn8kLjsxQR-flsbw1UtmYoQZfVqz4paS9okLurn8ervFW1Fyf/exec';
 
 async function dbCall(payload) {
   try {
@@ -90,22 +90,47 @@ async function db_deleteUsuario(name) {
 }
 
 // ======= FUNCIONES PARA DATOS DE PROCESO =======
+// AHORA comunican con el backend. Mantienen localStorage como fallback/offline.
 
 async function db_guardarDatosProceso(datos) {
+  // 1. Siempre actualizar caché local primero (respuesta inmediata + offline)
   try {
     let historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
-    // Sobrescribe si ya existe ese turno y día
     historial = historial.filter(h => !(h.fecha_fabrica === datos.fecha_fabrica && h.turno === datos.turno));
     historial.push(datos);
     localStorage.setItem('traplog_datos_proceso', JSON.stringify(historial));
-    return { ok: true };
   } catch(e) {
-    console.warn('Error guardando datos de proceso:', e);
-    return { ok: false, error: e.message };
+    console.warn('Error caché local proceso:', e);
   }
+
+  // 2. Intentar backend (Google Apps Script)
+  try {
+    const res = await dbCall({ action: 'saveProceso', datos });
+    if (res && res.ok) return res;
+  } catch (err) {
+    console.warn('db_guardarDatosProceso backend falló, se usó solo localStorage:', err);
+  }
+
+  return { ok: true };
 }
 
 async function db_getDatosProceso(fecha, turno) {
+  // 1. Intentar backend primero
+  try {
+    const res = await dbCall({ action: 'getProceso', fecha, turno });
+    if (res && res.ok && res.datos) {
+      // Actualizar caché local si hay datos del servidor
+      let historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
+      historial = historial.filter(h => !(h.fecha_fabrica === fecha && h.turno === turno));
+      historial.push(res.datos);
+      localStorage.setItem('traplog_datos_proceso', JSON.stringify(historial));
+      return res;
+    }
+  } catch (err) {
+    console.warn('db_getDatosProceso backend falló, usando localStorage:', err);
+  }
+
+  // 2. Fallback localStorage
   try {
     const historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
     const datos = historial.find(h => h.fecha_fabrica === fecha && h.turno === turno);
@@ -115,13 +140,19 @@ async function db_getDatosProceso(fecha, turno) {
   }
 }
 
-// Nueva: Obtener el último registro sin importar cuál sea (para la precarga)
 async function db_getUltimoRegistroProceso() {
+  // 1. Intentar backend primero
+  try {
+    const res = await dbCall({ action: 'getUltimoProceso' });
+    if (res && res.ok && res.datos) return res;
+  } catch (err) {
+    console.warn('db_getUltimoRegistroProceso backend falló, usando localStorage:', err);
+  }
+
+  // 2. Fallback localStorage
   try {
     const historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
     if (historial.length === 0) return { ok: true, datos: null };
-    
-    // Ordenar por timestamp descendente y agarrar el primero
     historial.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     return { ok: true, datos: historial[0] };
   } catch(e) {
@@ -130,6 +161,18 @@ async function db_getUltimoRegistroProceso() {
 }
 
 async function db_getHistorialProceso(limite = 20) {
+  // 1. Intentar backend primero
+  try {
+    const res = await dbCall({ action: 'getHistorialProceso', limite });
+    if (res && res.ok && res.datos) {
+      localStorage.setItem('traplog_datos_proceso', JSON.stringify(res.datos));
+      return res;
+    }
+  } catch (err) {
+    console.warn('db_getHistorialProceso backend falló, usando localStorage:', err);
+  }
+
+  // 2. Fallback localStorage
   try {
     let historial = JSON.parse(localStorage.getItem('traplog_datos_proceso') || '[]');
     historial.sort((a, b) => {
@@ -142,4 +185,15 @@ async function db_getHistorialProceso(limite = 20) {
   } catch(e) {
     return { ok: false, error: e.message };
   }
+}
+
+// ======= ZAFRA =======
+// Faltaban por completo en db.js
+
+async function db_getZafraConfig() {
+  return await dbCall({ action: 'getZafraConfig' });
+}
+
+async function db_saveZafraConfig(config) {
+  return await dbCall({ action: 'saveZafraConfig', config });
 }
