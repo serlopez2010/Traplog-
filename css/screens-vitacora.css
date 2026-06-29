@@ -124,10 +124,10 @@
   display:        inline-block;
 }
 
-.header-right       { text-align: right; }
+.header-right       { display:flex;flex-direction: column; text-align: right; }
 .header-time        { font-family: var(--font-mono); font-size: 14px; color: var(--accent); line-height: 1; }
 .header-date        { font-family: var(--font-mono); font-size: 9px; color: var(--text2); margin-top: 2px; }
-.header-turno-wrap  { margin-top: 3px; text-align: right; }
+.header-turno-wrap  { margin-top: 2px; text-align: right; }
 
 .user-chip {
   display:       inline-flex;

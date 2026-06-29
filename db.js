@@ -4,7 +4,12 @@
 // Para migrar a Firebase en v0.5: reescribir solo este archivo
 // ============================================================
 
+<<<<<<< Updated upstream
 const DB_URL = 'https://script.google.com/macros/s/AKfycbxdsUEiNCgkVFxWW07i27nyP7YJKwaqx5vhlwDhYknK35hxWFzpm910Lc3vQYJfyc3F5A/exec';
+=======
+// const DB_URL = 'https://script.google.com/macros/s/AKfycbxytXvtGZ8C8d2TiJCcn8kLjsxQR-flsbw1UtmYoQZfVqz4paS9okLurn8ervFW1Fyf/exec';
+const DB_URL = 'https://script.google.com/macros/s/AKfycbwFK4A8I3Iy2LPk9nQa6gHr2sdVxIMEjsvuClG-zvdPGznp4EFiz-mnx20Vb_Q_arArsw/exec';
+>>>>>>> Stashed changes
 
 async function dbCall(payload) {
   try {
