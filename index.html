@@ -153,8 +153,7 @@
       <div class="header-time" id="clock">--:--:--</div>
       <div class="header-date" id="dateline">---</div>
       <div class="header-turno-wrap"><div class="turno-chip" id="hdr-turno">—</div></div>
-      <div class="header-turno-wrap" id="zafra-badge-wrap" style="display:none"><div class="turno-chip" id="zafra-badge" style="background:rgba(255,107,53,.15);color:var(--accent2);border-color:rgba(255,107,53,.4);font-size:9px">ZAFRA</div></div>
-      <button id="btn-refresh-header" onclick="manualRefresh()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;display:none;margin-left:8px">🔄</button>
+      <button id="btn-refresh-header" onclick="manualRefresh()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:20px;padding:2px 10px;font-family:var(--font-mono);font-size:10px;cursor:pointer;letter-spacing:1px;margin-top: 6px;">ACTUALIZAR 🔄</button>
     </div>
   </div>
 
@@ -231,7 +230,7 @@
   </div>
 
   <!-- PANTALLA DE MONITOREO DE PROCESO -->
-  <div class="screen" id="screen-proceso" style="padding-bottom: 90px;"></div>
+  <div class="screen" id="screen-proceso">
     <div class="turno-banner">
       <div class="turno-title" id="proceso-turno-text">Cargando turno...</div>
       <div class="turno-sub">📊 Modificá los datos que cambiaron y guardá</div>
@@ -638,7 +637,13 @@ function renderPendientes() {
     const resto = isParam ? `(${2 - turnosPasados + 1} turno(s) restante)` : '';
     const eb = canEdit ? `<button class="btn-edit-ev" onclick="openEditModal(${e.id});event.stopPropagation()">EDITAR</button>` : '';
     const cb = canEdit ? `<button class="btn-close-ev" onclick="closeEvent(${e.id});event.stopPropagation()">OK</button>` : '';
-    const cib = canEdit && !isParam ? `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 10px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">CERRAR Y NUEVO</button>` : '';
+    
+    // --- CAMBIO: Mostrar "Cerrar y Nuevo" también para Falla Física sin parada ---
+    const esFallaFisicaSinParada = e.impacto === 'sin-parada' && e.origen === 'Falla Física';
+    const cib = canEdit && (esFallaFisicaSinParada || !isParam) ? 
+      `<button class="btn-primary" onclick="cerrarYNuevo(${e.id});event.stopPropagation()" style="background:var(--accent2);color:white;border:none;border-radius:6px;padding:5px 10px;font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer">CERRAR Y NUEVO</button>` : '';
+    // --- FIN CAMBIO ---
+    
     return `<div class="compact-card" style="border-left-color:${borderColor}" onclick="toggleCompact(this)">
       <div class="compact-row">${lineaBadge(e.linea)}<<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span><span class="compact-expand-hint">▼</span></div>
       <div class="compact-desc">${e.descripcion}</div>
@@ -661,11 +666,33 @@ function toggleCompact(el) {
 
 function cerrarYNuevo(id) {
   if (currentUser?.role === 'viewer') return document.getElementById('ro-overlay').classList.add('show');
-  const e = eventos.find(x => x.id === id); if (!e) return;
+  const e = eventos.find(x => x.id === id); 
+  if (!e) return;
+  
+  // 1. Cerrar el evento actual
   closeEvent(id);
-  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector };
+  
+  // 2. --- CAMBIO: Heredar datos del evento que se cierra ---
+  // Guardar los datos en una variable global para que wizard los use
+  window._wizardData = {
+    linea: e.linea,
+    equipo: e.equipo,
+    componente: e.componente,
+    sector: e.sector,
+    origen: e.origen || 'Falla Física',
+    tipo: e.tipo_evento,
+    descripcion: e.descripcion || '',
+    // NO heredamos impacto - queda libre para que el usuario decida
+  };
+  // --- FIN CAMBIO ---
+  
+  // 3. Iniciar wizard
   TrapWizard.init();
-  TrapWizard.ev = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector };
+  
+  // 4. Cargar los datos heredados en el wizard
+  Object.assign(TrapWizard.ev, window._wizardData);
+  TrapWizard.render(); // Forzar re-renderizado con los datos cargados
+  
   showScreen('wizard');
   toast('Pendiente cerrado — Completá el nuevo evento');
 }
@@ -827,8 +854,19 @@ function initEventosScreen() {
 
   updateTurnoDebug();
 
-  if (!document.getElementById('flt-desde').value) {
-    filtroRapido('turno_actual');
+  // Mostrar últimos 7 días por defecto
+  const desde = document.getElementById('flt-desde');
+  const hasta = document.getElementById('flt-hasta');
+  
+  if (!desde.value && !hasta.value) {
+    const hoy = new Date();
+    const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
+    desde.value = hace7.toISOString().slice(0, 10);
+    hasta.value = hoy.toISOString().slice(0, 10);
+    _filtroTurno = null;
+    _filtroDia = null;
+    updateTurnoFilterChip();
+    renderEventosFiltrados();
   } else {
     updateTurnoFilterChip();
     renderEventosFiltrados();
@@ -836,44 +874,61 @@ function initEventosScreen() {
 }
 
 // NUEVA FUNCIÓN: extrae la lógica de filtrado para reutilizarla
+// FUNCIÓN CORREGIDA: Filtra priorizando el Día de Fábrica Real
 function getEventosFiltrados() {
-  const desde = document.getElementById('flt-desde').value;
-  const hasta = document.getElementById('flt-hasta').value;
+  const desde = document.getElementById('flt-desde').value; // Formato YYYY-MM-DD
+  const hasta = document.getElementById('flt-hasta').value; // Formato YYYY-MM-DD
   const linea = document.getElementById('flt-linea').value;
   const impacto = document.getElementById('flt-impacto').value;
   const equipo = document.getElementById('flt-equipo').value;
 
   let filtrados = [...eventos].reverse();
 
-  // Filtro por fecha: usa inicio_evento, fallback a fecha_fabrica
-  if (desde) {
-    filtrados = filtrados.filter(e => {
-      let ref = TrapUtils.normalizarFecha(e.inicio_evento);
-      if (!ref) ref = TrapUtils.normalizarFecha(e.fecha_fabrica);
-      return ref && ref >= desde;
-    });
-  }
-  if (hasta) {
-    filtrados = filtrados.filter(e => {
-      let ref = TrapUtils.normalizarFecha(e.inicio_evento);
-      if (!ref) ref = TrapUtils.normalizarFecha(e.fecha_fabrica);
-      return ref && ref <= hasta;
-    });
-  }
-
-  // Filtro por turno: calcula el turno REAL de cada evento desde su inicio_evento
-  // NO usa el campo 'turno' de la base de datos (puede tener datos antiguos)
+  // 1. FILTRO DE TURNO Y DÍA DE FÁBRICA REAL (Prioridad absoluta)
+  // Si están activos, omitimos el filtro por rango cronológico de los inputs
   if (_filtroTurno && _filtroDia) {
     filtrados = filtrados.filter(e => {
       const real = getTurnoRealEvento(e.inicio_evento);
       if (real) {
         return real.turno === _filtroTurno && real.dia === _filtroDia;
       }
-      // Fallback: si no hay inicio_evento, usar campo turno de la base
+      // Fallback: si no hay inicio_evento, normalizar fecha_fabrica de la BD a DD/MM/YYYY si viene en otro formato
       return e.turno === _filtroTurno && e.fecha_fabrica === _filtroDia;
     });
+  } 
+  // 2. FILTRO POR RANGO DE FECHAS (Calendario estándar: 7 días, 30 días, o selección manual)
+  // Modificado para comparar contra el Día de Fábrica del evento, no la hora real cronológica
+  else {
+  if (desde) {
+    filtrados = filtrados.filter(e => {
+        const real = getTurnoRealEvento(e.inicio_evento);
+        // Convertimos el "DD/MM/YYYY" de fábrica a "YYYY-MM-DD" para poder comparar textos
+        if (real && real.dia) {
+          const [d, m, y] = real.dia.split('/');
+          const diaFabricaISO = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+          return diaFabricaISO >= desde;
+        }
+        // Fallback si no tiene inicio_evento
+        let ref = TrapUtils.normalizarFecha(e.fecha_fabrica);
+      return ref && ref >= desde;
+    });
+  }
+  if (hasta) {
+    filtrados = filtrados.filter(e => {
+        const real = getTurnoRealEvento(e.inicio_evento);
+        if (real && real.dia) {
+          const [d, m, y] = real.dia.split('/');
+          const diaFabricaISO = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+          return diaFabricaISO <= hasta;
+        }
+        // Fallback si no tiene inicio_evento
+        let ref = TrapUtils.normalizarFecha(e.fecha_fabrica);
+      return ref && ref <= hasta;
+    });
+  }
   }
 
+  // 3. FILTROS RESTANTES (Línea, Impacto, Equipo)
   if (linea) filtrados = filtrados.filter(e => e.linea === linea);
   if (impacto) filtrados = filtrados.filter(e => e.impacto === impacto);
   if (equipo) filtrados = filtrados.filter(e => e.equipo === equipo);
@@ -883,19 +938,26 @@ function getEventosFiltrados() {
 
 function renderEventosFiltrados() {
   const filtrados = getEventosFiltrados();
+  
+  // Ordenar por inicio_evento (fecha real) de más reciente a más antiguo
+  const ordenados = [...filtrados].sort((a, b) => {
+    const fechaA = a.inicio_evento ? new Date(a.inicio_evento) : new Date(a.timestamp);
+    const fechaB = b.inicio_evento ? new Date(b.inicio_evento) : new Date(b.timestamp);
+    return fechaB - fechaA;
+  });
 
   const count = document.getElementById('eventos-count');
-  const paradas = filtrados.filter(e => e.impacto === 'parada');
+  const paradas = ordenados.filter(e => e.impacto === 'parada');
   const minPerd = paradas.reduce((s, e) => s + (Number(e.duracion_min) || 0), 0);
-  count.innerHTML = `${filtrados.length} EVENTOS · ${paradas.length} PARADAS · ${Math.round(minPerd)} MIN PERDIDOS`;
+  count.innerHTML = `${ordenados.length} EVENTOS · ${paradas.length} PARADAS · ${Math.round(minPerd)} MIN PERDIDOS`;
 
   const list = document.getElementById('eventos-list-all');
-  if (!filtrados.length) { 
+  if (!ordenados.length) { 
     list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Sin eventos con esos filtros.</div></div>`; 
     return; 
   }
   const canEdit = currentUser?.role !== 'viewer';
-  list.innerHTML = filtrados.map(e => buildEventCard(e, canEdit, 'eventos')).join('');
+  list.innerHTML = ordenados.map(e => buildEventCard(e, canEdit, 'eventos')).join('');
 }
 
 // ------- ACCIONES RÁPIDAS -------
@@ -955,7 +1017,17 @@ async function saveEdit() {
   const e = eventos.find(x => x.id === id); if (!e) return;
   const ini = document.getElementById('edit-ini').value;
   const fin = document.getElementById('edit-fin').value;
-  if (ini && fin && new Date(fin) <= new Date(ini)) { toast('El fin no puede ser menor o igual al inicio'); return; }
+  
+  // Validar que fin no sea anterior a inicio
+  if (ini && fin) {
+    const fechaIni = new Date(ini);
+    const fechaFin = new Date(fin);
+    if (fechaFin <= fechaIni) {
+      toast('⚠️ El fin no puede ser menor o igual al inicio');
+      return;
+    }
+  }
+  
   e.linea = document.getElementById('edit-linea').value;
   e.equipo = document.getElementById('edit-equipo').value;
   e.componente = document.getElementById('edit-comp').value;
@@ -963,8 +1035,16 @@ async function saveEdit() {
   e.tipo_evento = document.getElementById('edit-tipo').value;
   e.descripcion = document.getElementById('edit-desc').value.trim();
   e.inicio_evento = ini; e.fin_evento = fin;
-  if (ini && fin) { e.duracion_min = Math.round((new Date(fin) - new Date(ini)) / 60000); e.estado = 'Cerrado'; e.pendiente = false; }
-  else if (e.impacto === 'parada' && !fin) { e.duracion_min = ''; e.estado = 'Abierto'; e.pendiente = true; }
+  if (ini && fin) { 
+    e.duracion_min = Math.max(0, Math.round((new Date(fin) - new Date(ini)) / 60000)); 
+    e.estado = 'Cerrado'; 
+    e.pendiente = false; 
+  }
+  else if (e.impacto === 'parada' && !fin) { 
+    e.duracion_min = ''; 
+    e.estado = 'Abierto'; 
+    e.pendiente = true; 
+  }
   localStorage.setItem('vitacora_trapiches', JSON.stringify(eventos));
   closeEditModal(); renderHome();
   if (document.getElementById('screen-pareto')?.classList.contains('active')) initEventosScreen();
@@ -972,6 +1052,7 @@ async function saveEdit() {
   const campos = { linea: e.linea, equipo: e.equipo, componente: e.componente, sector: e.sector, tipo_evento: e.tipo_evento, descripcion: e.descripcion, inicio_evento: e.inicio_evento, fin_evento: e.fin_evento, duracion_min: e.duracion_min, estado: e.estado, pendiente: e.pendiente };
   db_updateEvento(id, campos);
 }
+
 
 async function deleteEvent(id, fromList = false) {
   if (!confirm('Borrar este evento?')) return;

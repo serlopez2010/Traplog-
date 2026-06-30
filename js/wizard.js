@@ -92,8 +92,69 @@ const TrapWizard = (function() {
     return true;
   }
 
+  // ================================================================
+  // FUNCIÓN save() CON EL CAMBIO DEL CHECKBOX
+  // ================================================================
   function save() {
-    const { turno, dia } = TrapUtils.nowTurno();
+    // --- Determinar si es sin-parada por falla física ---
+    const esSinParadaFallaFisica = ev.impacto === 'sin-parada' && ev.origen === 'Falla Física';
+    
+    if (esSinParadaFallaFisica) {
+      const ahora = new Date();
+      const ahoraISO = ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0')+'-'+String(ahora.getDate()).padStart(2,'0')+'T'+String(ahora.getHours()).padStart(2,'0')+':'+String(ahora.getMinutes()).padStart(2,'0');
+      ev.inicio_evento = ahoraISO;
+      ev.fin_evento = ahoraISO;
+    }
+
+    // --- Determinar turno y día a partir de inicio_evento ---
+    let turno, dia;
+    const fechaInicio = ev.inicio_evento;
+    
+    if (fechaInicio) {
+      const fecha = new Date(fechaInicio);
+      const h = fecha.getHours();
+      turno = h >= 6 && h < 14 ? 'Mañana' : h >= 14 && h < 22 ? 'Tarde' : 'Noche';
+      
+      const año = fecha.getFullYear();
+      const mes = fecha.getMonth();
+      const diaNum = fecha.getDate();
+      if (h < 6) {
+        const ayer = new Date(año, mes, diaNum - 1);
+        dia = `${String(ayer.getDate()).padStart(2,'0')}/${String(ayer.getMonth()+1).padStart(2,'0')}/${ayer.getFullYear()}`;
+      } else {
+        dia = `${String(diaNum).padStart(2,'0')}/${String(mes+1).padStart(2,'0')}/${año}`;
+      }
+    } else {
+      const ahora = TrapUtils.nowTurno();
+      turno = ahora.turno;
+      dia = ahora.dia;
+    }
+
+    // ================================================================
+    // CAMBIO: Leer el checkbox para determinar estado
+    // ================================================================
+    let estado = 'Cerrado';
+    let pendiente = false;
+
+    if (esSinParadaFallaFisica) {
+      // Leer el checkbox del paso resumen
+      const chk = document.getElementById('wiz-oportunamente');
+      if (chk && chk.checked) {
+        estado = 'Oportunamente';
+        pendiente = false; // <--- NUNCA es pendiente, solo estado informativo
+      } else {
+        estado = 'Cerrado';
+        pendiente = false;
+      }
+    } else if (ev.impacto === 'parada' && !ev.fin_evento) {
+      estado = 'Abierto';
+      pendiente = true;
+    } else {
+      estado = 'Cerrado';
+      pendiente = false;
+    }
+    // ================================================================
+
     const saved = {
       id: Date.now(),
       timestamp: new Date().toISOString(),
@@ -106,14 +167,12 @@ const TrapWizard = (function() {
       tipo_evento: ev.tipo || 'Operativo',
       descripcion: ev.descripcion,
       inicio_evento: ev.inicio_evento,
-      fin_evento: ev.impacto === 'parada' ? (ev.fin_evento || '') : '',
-      duracion_min: ev.impacto === 'parada' && ev.inicio_evento && ev.fin_evento ? Math.round((new Date(ev.fin_evento) - new Date(ev.inicio_evento)) / 60000) : '',
-      estado: (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? 'Oportunamente' : 
-              (ev.impacto === 'parada' && !ev.fin_evento) ? 'Abierto' : 'Cerrado',
+      fin_evento: esSinParadaFallaFisica ? ev.fin_evento : (ev.impacto === 'parada' ? (ev.fin_evento || '') : ''),
+      duracion_min: esSinParadaFallaFisica ? 0 : (ev.impacto === 'parada' && ev.inicio_evento && ev.fin_evento ? Math.round((new Date(ev.fin_evento) - new Date(ev.inicio_evento)) / 60000) : ''),
+      estado: estado,
       responsable: currentUser ? currentUser.name : '',
       impacto: ev.impacto,
-      pendiente: (ev.impacto === 'parada' && !ev.fin_evento) || 
-                 (ev.impacto === 'sin-parada' && ev.estado === 'Oportunamente'),
+      pendiente: pendiente,
       _exported: false
     };
 
@@ -231,6 +290,19 @@ const TrapWizard = (function() {
   }
 
   function htmlTiempos() {
+    const esSinParadaFallaFisica = ev.impacto === 'sin-parada' && ev.origen === 'Falla Física';
+    const mostrarTiempos = !esSinParadaFallaFisica;
+    
+    if (!mostrarTiempos) {
+      return `
+        <div class="field-group"><label>DESCRIPCIÓN</label><textarea id="wiz-desc" placeholder="Detalle lo ocurrido..." style="min-height:80px">${ev.descripcion||''}</textarea></div>
+        <div class="info-box" style="background:var(--surface2);border:1px solid var(--border);margin-top:12px">
+          <span style="font-size:16px">⏱️</span>
+          <div class="info-box-text" style="font-size:12px;color:var(--text2)">Este evento se registrará con tiempo 0 (inicio y fin automáticos)</div>
+        </div>
+      `;
+    }
+    
     const mostrarFin = ev.impacto === 'parada';
     const inputHiddenStyle = "display:none;visibility:hidden;width:0;height:0;position:absolute;";
 
@@ -266,11 +338,37 @@ const TrapWizard = (function() {
       ` : ''}`;
   }
 
+  // ================================================================
+  // htmlResumen() CON EL CHECKBOX AGREGADO
+  // ================================================================
   function htmlResumen() {
     ev.descripcion = document.getElementById('wiz-desc')?.value || ev.descripcion;
-    const estadoStr = (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : 
-                      (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? '<span style="color:var(--warn)">OPORTUNAMENTE (QUEDARÁ EN PENDIENTES HASTA CERRAR MANUALMENTE)</span>' :
-                      '<span style="color:var(--ok)">CERRADO</span>';
+    const esSinParadaFallaFisica = ev.impacto === 'sin-parada' && ev.origen === 'Falla Física';
+    
+    // Determinar estado que se mostrará según checkbox (por defecto Oportunamente)
+    const estadoOportunamente = esSinParadaFallaFisica;
+    
+    // Checkbox HTML (solo para sin-parada por falla física)
+    let checkboxHTML = '';
+    if (esSinParadaFallaFisica) {
+      checkboxHTML = `
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-top:14px;border:1px solid var(--accent)44">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text)">
+            <input type="checkbox" id="wiz-oportunamente" checked style="width:18px;height:18px;accent-color:var(--accent)">
+            <span>📌 Marcar como <strong>OPORTUNAMENTE</strong> (requiere atención)</span>
+          </label>
+          <p style="font-size:11px;color:var(--text2);margin-top:6px;padding-left:28px">
+            Si desmarcás, el evento se registrará como <strong>Cerrado</strong>.
+          </p>
+        </div>
+      `;
+    }
+
+    const estadoStr = esSinParadaFallaFisica ? 
+      '<span style="color:var(--warn)">DEPENDE DEL CHECKBOX</span>' :
+      (ev.impacto === 'parada' && !ev.fin_evento) ? '<span style="color:var(--danger)">ABIERTO (QUEDARÁ EN PENDIENTES)</span>' : 
+      (ev.impacto === 'sin-parada' && ev.origen === 'Falla Física') ? '<span style="color:var(--warn)">OPORTUNAMENTE</span>' :
+      '<span style="color:var(--ok)">CERRADO</span>';
     
     return `
       <div class="hl-box">
@@ -279,13 +377,15 @@ const TrapWizard = (function() {
         <div class="hl-row"><span class="hl-key">LÍNEA</span><span class="hl-val" style="color:${lineaColor(ev.linea)};font-weight:700">${ev.linea||'—'}</span></div>
         <div class="hl-row"><span class="hl-key">EQUIPO</span><span class="hl-val">${ev.equipo || ev.motivo || '—'}</span></div>
         <div class="hl-row"><span class="hl-key">COMPONENTE</span><span class="hl-val">${ev.componente || '—'}</span></div>
-        <div class="hl-row"><span class="hl-key">INICIO</span><span class="hl-val">${TrapUtils.fmtHora(ev.inicio_evento)}</span></div>
-        <div class="hl-row"><span class="hl-key">FIN</span><span class="hl-val">${ev.fin_evento ? TrapUtils.fmtHora(ev.fin_evento) : 'NO ASIGNADO'}</span></div>
+        <div class="hl-row"><span class="hl-key">INICIO</span><span class="hl-val">${esSinParadaFallaFisica ? 'AUTOMÁTICO' : TrapUtils.fmtHora(ev.inicio_evento)}</span></div>
+        <div class="hl-row"><span class="hl-key">FIN</span><span class="hl-val">${esSinParadaFallaFisica ? 'AUTOMÁTICO' : (ev.fin_evento ? TrapUtils.fmtHora(ev.fin_evento) : 'NO ASIGNADO')}</span></div>
+        <div class="hl-row"><span class="hl-key">DURACIÓN</span><span class="hl-val">${esSinParadaFallaFisica ? '0 min' : (ev.duracion_min || '—')}</span></div>
         <div class="hl-row"><span class="hl-key">ESTADO FINAL</span><span class="hl-val">${estadoStr}</span></div>
         <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
         <div class="hl-key" style="margin-bottom:4px">DESCRIPCIÓN</div>
         <div style="font-size:12px;color:var(--text);line-height:1.5">${ev.descripcion}</div>
-      </div>`;
+      </div>
+      ${checkboxHTML}`;
   }
 
   // --- HELPERS DINÁMICOS ---
@@ -360,23 +460,34 @@ const TrapWizard = (function() {
 
   function onPickerChange(tipo) {
     const inputId = tipo === 'inicio' ? 'wiz-ini' : 'wiz-fin';
-    const displayId = tipo === 'inicio' ? 'wiz-time-ini-display' : 'wiz-time-fin-display';
-    const cardId = tipo === 'inicio' ? 'time-card-ini' : 'time-card-fin';
     const val = document.getElementById(inputId).value;
     
     if (!val) return;
-    const d = new Date(val);
-    const fmt = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
     
+    const d = new Date(val);
+    const ahora = new Date();
+    
+    if (d > ahora) {
+      toast('⚠️ No se puede seleccionar una fecha/hora futura');
+      const ahoraISO = ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0')+'-'+String(ahora.getDate()).padStart(2,'0')+'T'+String(ahora.getHours()).padStart(2,'0')+':'+String(ahora.getMinutes()).padStart(2,'0');
+      document.getElementById(inputId).value = ahoraISO;
+      setTiempoAhora(tipo);
+      return;
+    }
+    
+    const fmt = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
     const key = tipo === 'inicio' ? 'inicio_evento' : 'fin_evento';
     ev[key] = val;
     
+    const displayId = tipo === 'inicio' ? 'wiz-time-ini-display' : 'wiz-time-fin-display';
+    const cardId = tipo === 'inicio' ? 'time-card-ini' : 'time-card-fin';
     document.getElementById(displayId).textContent = fmt;
     document.getElementById(cardId).classList.add('registered');
   }
 
   return { 
-    init, next, back, render, sel, selMotivo, onEqChange, ev, 
+    init, next, back, render, sel, selMotivo, onEqChange, 
+    ev,
     tapTiempo, startLongPress, cancelLongPress, openNativePicker, onPickerChange 
   };
 })();

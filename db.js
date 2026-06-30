@@ -4,7 +4,8 @@
 // Para migrar a Firebase en v0.5: reescribir solo este archivo
 // ============================================================
 
-const DB_URL = 'https://script.google.com/macros/s/AKfycbxytXvtGZ8C8d2TiJCcn8kLjsxQR-flsbw1UtmYoQZfVqz4paS9okLurn8ervFW1Fyf/exec';
+// const DB_URL = 'https://script.google.com/macros/s/AKfycbxytXvtGZ8C8d2TiJCcn8kLjsxQR-flsbw1UtmYoQZfVqz4paS9okLurn8ervFW1Fyf/exec';
+const DB_URL = 'https://script.google.com/macros/s/AKfycbwFK4A8I3Iy2LPk9nQa6gHr2sdVxIMEjsvuClG-zvdPGznp4EFiz-mnx20Vb_Q_arArsw/exec';
 
 async function dbCall(payload) {
   try {
