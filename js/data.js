@@ -10,9 +10,9 @@ const TrapData = (function() {
 
   // ======= MAPA DE EQUIPOS POR LÍNEA =======
   const EQUIPOS = {
-    T1: ['Volcador','Auxiliar nº1','Auxiliar nº2','Principal','Cuchilla 1','Cuchilla 2','Desfibrador','Cinta de goma','1er Molino','2do Molino','3er Molino','4to Molino','5to Molino','6to Molino','Zaranda','Gusano (th)','Bombas','Otro'],
-    T2: ['Volcador','Auxiliar','Principal','Cuchilla 1','Cuchilla 2','Desfibrador','Cinta de goma','1er Molino','2do Molino','3er Molino','4to Molino','5to Molino','6to Molino','Zaranda','Gusano (th)','Bombas','Otro'],
-    T3: ['Volcador','Auxiliar','Principal','Cuchilla 1','Cuchilla 2','Desfibrador','Cinta de goma','1er Molino','2do Molino','3er Molino','4to Molino','5to Molino','6to Molino','Zaranda','Gusano (th)','Bombas','Otro']
+    T1: ['Volcador','Auxiliar nº1','Auxiliar nº2','Principal','Cuchilla 1','Cuchilla 2','Desfibrador','Cinta de goma','1er Molino','1er Intermediario','2do Molino','2do Intermediario','3er Molino','3er Intermediario','4to Molino','4to Intermediario','5to Molino','5to Intrmediario','6to Molino','Zaranda','Gusano (th)','Bombas','Puente Grua','Otro'],
+    T2: ['Volcador','Auxiliar','Principal','Cuchilla 1','Cuchilla 2','Desfibrador','Cinta de goma','1er Molino','1er Intermediario','2do Molino','2do Intermediario','3er Molino','3er Intermediario','4to Molino','4to Intermediario','5to Molino','5to Intrmediario','6to Molino','Zaranda','Gusano (th)','Bombas','Puente Grua','Otro'],
+    T3: ['Volcador','Auxiliar','Principal','Cuchilla 1','Cuchilla 2','Desfibrador','Cinta de goma','1er Molino','1er Intermediario','2do Molino','2do Intermediario','3er Molino','3er Intermediario','4to Molino','4to Intermediario','5to Molino','5to Intrmediario','6to Molino','Zaranda','Gusano (th)','Bombas','Puente Grua','Otro']
   };
 
   // ======= LISTA MAESTRA DE COMPONENTES =======
@@ -23,7 +23,7 @@ const TrapData = (function() {
     "Bagacera","Donelly","Sensores/pick up","Llave/guardamotor","Motor",
     "Correas","Cadena","Rastrillos","Variador","Cable de acero","Cable eléctrico",
     "Bobinas de freno","Poleas","Bandas","Acople","Cañería","Espárragos",
-    "Rodamiento","Intermediario","Transmision","Bronce","Lubricacion","Otro"
+    "Rodamiento","Transmision","Bronce","Lubricacion","Otro","Martillos","Rolos" 
   ];
 
   // ======= MAPA ESTADÍSTICO HISTÓRICO =======
