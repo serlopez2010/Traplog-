@@ -225,11 +225,12 @@ const TrapWizard = (function() {
       { nombre: 'Trapiches', icono: '⚙️' },
       { nombre: 'Electrico', icono: '⚡' },
       { nombre: 'Electrónico', icono: '📟' },
-      { nombre: 'Lubricación', icono: '💧' }
+      { nombre: 'Lubricación', icono: '💧' },
+      { nombre: 'Calderas', icono: '🕛' }
     ];
     const tipos = [
       { nombre: 'Rotura', icono: '💥' },
-      { nombre: 'Mantenimiento', icono: '🛠️' }
+      { nombre: 'Mantenimiento, Tarea operativa', icono: '🛠️' }
     ];
     
     return `
