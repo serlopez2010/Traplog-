@@ -68,8 +68,8 @@
         <div class="topbar-time" id="clock">--:--:--</div>
         <div class="topbar-date" id="dateline">---</div>
       </div>
-        <button onclick="window.print()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:1px">🖨</button>
-        <button onclick="forzarRecarga()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:1px">🔄</button>
+        <button onclick="window.print()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer">🖨️ IMPRIMIR</button>
+        <button onclick="forzarRecarga()" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--accent);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer">🔄 RECARGAR</button>
     </div>
   </div>
 
@@ -187,7 +187,7 @@
     <div class="dash-screen" id="screen-eventos">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="sec-title" style="margin:0;flex:1">TABLA DE EVENTOS</div>
-        <button onclick="exportCSV()" style="background:var(--ok);color:var(--bg);border:none;border-radius:6px;padding:8px 14px;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;font-weight:600">DESCARGAR CSV</button>
+        <button onclick="exportCSV()" style="background:var(--ok);color:var(--bg);border:none;border-radius:6px;padding:8px 14px;font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer">📥 EXPORTAR CSV</button>
       </div>
       <div class="table-wrap"><table id="tabla-eventos">
         <thead><tr>
@@ -214,12 +214,12 @@
     </div>
     <div class="pareto-panel-list" id="pareto-panel-list"></div>
     <div class="pareto-panel-footer">
-      <button onclick="irAEventosConFiltro()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:11px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;font-weight:600">VER TODOS EN EVENTOS →</button>
+      <button onclick="irAEventosConFiltro()" style="width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:11px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer">→ IR A EVENTOS</button>
     </div>
   </div>
 </div>
 
-<div id="f5-hint" style="position:fixed;bottom:75px;left:8px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:rgba(122,156,200,.35);z-index:99;pointer-events:none;letter-spacing:1px;display:none;transition:opacity 0.3s">Presiona F5 para actualizar datos</div>
+<div id="f5-hint" style="position:fixed;bottom:75px;left:8px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:rgba(122,156,200,.35);z-index:99;pointer-events:none;letter-spacing:1px;display:none">Presiona F5 para recargar datos sin romper gráficos</div>
 
 <nav class="bottom-nav-mobile">
   <div class="bnav-scroll">
@@ -228,7 +228,7 @@
       <span class="bnav-lbl">RESUMEN</span>
     </button>
     <button class="bnav-btn" data-screen="pareto" onclick="showDash('pareto')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="3" x2="21" y2="3"/></svg>
       <span class="bnav-lbl">RANKING</span>
     </button>
     <button class="bnav-btn" data-screen="disponibilidad" onclick="showDash('disponibilidad')">
@@ -236,7 +236,7 @@
       <span class="bnav-lbl">DISPON.</span>
     </button>
     <button class="bnav-btn" data-screen="turnos" onclick="showDash('turnos')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13V15a4 4 0 01-4 4H3"/></svg>
       <span class="bnav-lbl">TURNOS</span>
     </button>
     <button class="bnav-btn" data-screen="pendientes" onclick="showDash('pendientes')">
@@ -429,13 +429,13 @@ function mkChart(id,config){
   charts[id]=new Chart(ctx,config);
 }
 function barConfig(labels,data,colors,label=''){
-  return {type:'bar',data:{labels,datasets:[{label,data,backgroundColor:colors||COLORS,borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:!!label}},scales:{x:{grid:{color:'rgba(30,48,96,.4)'}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}};
+  return {type:'bar',data:{labels,datasets:[{label,data,backgroundColor:colors||COLORS,borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}};
 }
 function donaConfig(labels,data,colors){
-  return {type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors||COLORS,borderWidth:2,borderColor:'#070c1a'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#7a9cc8',font:{size:11}}}}}};
+  return {type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors||COLORS,borderWidth:2,borderColor:'#070c1a'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7a9cc8'}}}}};
 }
 function lineConfig(labels,datasets){
-  return {type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9cc8'}}},scales:{x:{grid:{color:'rgba(30,48,96,.4)'},ticks:{maxRotation:45}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}};
+  return {type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a9cc8'}}},scales:{x:{grid:{color:'rgba(30,48,96,.4)'},ticks:{maxRotation:45,minRotation:0}},y:{grid:{color:'rgba(30,48,96,.4)'},beginAtZero:true}}}};
 }
 
 // ======= RENDER RESUMEN (Corregido) =======
@@ -448,7 +448,7 @@ function renderResumen(){
 
   document.getElementById('kpi-grid').innerHTML=`
     <div class="kpi-card accent"><div class="kpi-label">Total Eventos</div><div class="kpi-val">${evs.length}</div><div class="kpi-sub">${paradas.length} paradas · ${evs.length-paradas.length} sin parada</div></div>
-    <div class="kpi-card danger"><div class="kpi-label">Tiempo Perdido (Físico)</div><div class="kpi-val">${Math.round(minPerd)}</div><div class="kpi-unit">MINUTOS</div><div class="kpi-sub">${(minPerd/60).toFixed(1)} horas</div></div>
+    <div class="kpi-card danger"><div class="kpi-label">Tiempo Perdido (Físico)</div><div class="kpi-val">${Math.round(minPerd)}</div><div class="kpi-unit">MINUTOS</div><div class="kpi-sub">${(minPerd/60).toFixed(1)} hs</div></div>
     <div class="kpi-card ok"><div class="kpi-label">Cerrados</div><div class="kpi-val">${evs.filter(e=>e.estado==='Cerrado').length}</div><div class="kpi-sub">de ${evs.length} registrados</div></div>
     <div class="kpi-card warn"><div class="kpi-label">Pendientes</div><div class="kpi-val">${pendientes}</div><div class="kpi-sub">sin cerrar</div></div>
     <div class="kpi-card accent2"><div class="kpi-label">Equipos Afectados</div><div class="kpi-val">${equiposUnicos}</div><div class="kpi-sub">por fallas físicas</div></div>
@@ -490,7 +490,7 @@ function renderResumen(){
   const byDate={};
   paradas.filter(e=>e.tipo_evento!=='Operativo').forEach(e=>{if(e.fecha_fabrica)byDate[e.fecha_fabrica]=(byDate[e.fecha_fabrica]||0)+Number(e.duracion_min||0);});
   const fechas=Object.keys(byDate).sort((a,b)=>parseDate(a)-parseDate(b));
-  mkChart('chart-timeline',lineConfig(fechas,[{label:'Min perdidos',data:fechas.map(f=>Math.round(byDate[f])),borderColor:C_DANGER,backgroundColor:'rgba(255,23,68,.1)',fill:true,tension:.3,pointBackgroundColor:C_DANGER}]));
+  mkChart('chart-timeline',lineConfig(fechas,[{label:'Min perdidos',data:fechas.map(f=>Math.round(byDate[f])),borderColor:C_DANGER,backgroundColor:'rgba(255,23,68,.1)',fill:true,tension:.3,pointBackgroundColor:C_DANGER,pointRadius:4}]));
 }
 
 // ======= RENDER DISPONIBILIDAD (Corregido) =======
@@ -545,9 +545,15 @@ function renderDisponibilidad(){
   </table></div>`;
 }
 
-// ======= PARETO =======
+// ======= PARETO ======= (CORREGIDO PARA EXCLUIR OPERATIVAS)
 function renderPareto(){
-  const paradas=filteredEventos.filter(e=>e.impacto==='parada'&&Number(e.duracion_min)>0);
+  // Filtrar solo paradas CON duración, EXCLUYENDO operativas y General
+  const paradas=filteredEventos.filter(e=>
+    e.impacto==='parada'
+    && Number(e.duracion_min)>0
+    && e.tipo_evento !== 'Operativo'
+    && e.equipo !== 'General'
+  );
   const todos=filteredEventos;
   const totalMin=sumMin(paradas);
 
@@ -587,11 +593,14 @@ function renderPareto(){
   makePareto('pareto-sector', e=>e.sector, ()=>C_ACCENT);
   makePareto('pareto-comp', e=>e.componente||'—', ()=>C_ACCENT2);
 
+  // Gráfico sector dona - también SOLO fallas físicas
   const sectores={};
   paradas.forEach(e=>{sectores[e.sector]=(sectores[e.sector]||0)+Number(e.duracion_min||0);});
   mkChart('chart-sector-dona',donaConfig(Object.keys(sectores),Object.values(sectores)));
+  
+  // Gráfico tipo count - SOLO fallas físicas (excluir operativas)
   const tipos={};
-  todos.forEach(e=>{tipos[e.tipo_evento]=(tipos[e.tipo_evento]||0)+1;});
+  paradas.forEach(e=>{tipos[e.tipo_evento]=(tipos[e.tipo_evento]||0)+1;});
   mkChart('chart-tipo-count',barConfig(Object.keys(tipos),Object.values(tipos),COLORS,'Cantidad'));
 }
 
@@ -671,14 +680,43 @@ function renderEventos(){
   }).join('');
 }
 
-// ======= PARETO PANEL =======
+// ======= PARETO PANEL ======= (TAMBIÉN CORREGIDO)
 let paretoPanelKey=null, paretoPanelType=null;
 function openParetoPanel(key, containerId){
   paretoPanelKey=key; paretoPanelType=containerId;
   let evsFiltrados;
-  if(containerId==='pareto-equipo'){ const [linea,equipo]=key.split('|'); evsFiltrados=filteredEventos.filter(e=>e.linea===linea&&e.equipo===equipo); document.getElementById('pareto-panel-title').innerHTML=`${lineaBadge(linea)} ${equipo}`; }
-  else if(containerId==='pareto-sector'){ evsFiltrados=filteredEventos.filter(e=>e.sector===key); document.getElementById('pareto-panel-title').textContent=key; }
-  else { evsFiltrados=filteredEventos.filter(e=>(e.componente||'—')===key); document.getElementById('pareto-panel-title').textContent=key; }
+  if(containerId==='pareto-equipo'){ 
+    const [linea,equipo]=key.split('|'); 
+    evsFiltrados=filteredEventos.filter(e=>
+      e.linea===linea
+      && e.equipo===equipo
+      && e.tipo_evento !== 'Operativo'
+      && e.equipo !== 'General'
+      && e.impacto === 'parada'
+      && Number(e.duracion_min) > 0
+    ); 
+    document.getElementById('pareto-panel-title').innerHTML=`${lineaBadgePareto(linea)} ${equipo}`;
+  }
+  else if(containerId==='pareto-sector'){ 
+    evsFiltrados=filteredEventos.filter(e=>
+      e.sector===key
+      && e.tipo_evento !== 'Operativo'
+      && e.equipo !== 'General'
+      && e.impacto === 'parada'
+      && Number(e.duracion_min) > 0
+    ); 
+    document.getElementById('pareto-panel-title').textContent=key; 
+  }
+  else { 
+    evsFiltrados=filteredEventos.filter(e=>
+      (e.componente||'—')===key
+      && e.tipo_evento !== 'Operativo'
+      && e.equipo !== 'General'
+      && e.impacto === 'parada'
+      && Number(e.duracion_min) > 0
+    ); 
+    document.getElementById('pareto-panel-title').textContent=key; 
+  }
   const minPerd=sumMin(evsFiltrados);
   document.getElementById('pareto-panel-count').textContent=`${evsFiltrados.length} eventos · ${Math.round(minPerd)} min perdidos`;
   const sorted=[...evsFiltrados].reverse();
@@ -687,7 +725,7 @@ function openParetoPanel(key, containerId){
     const ib=e.impacto==='parada'?`<span class="badge b-danger">🛑</span>`:`<span class="badge b-ok">⚙️</span>`;
     return `<div class="pareto-ev-row">
       <div class="pareto-ev-top">
-        <div style="display:flex;align-items:center;gap:6px">${lineaBadge(e.linea)}<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||''}</span></div>
+        <div style="display:flex;align-items:center;gap:6px">${lineaBadge(e.linea)}<strong style="font-size:12px">${e.equipo}</strong><span style="font-size:10px;color:var(--text2)">· ${e.componente||'—'}</span></div>
         <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-align:right">${e.fecha_fabrica||''}<br>${ti}→${tf}${e.duracion_min?` <span style="color:var(--accent2)">${e.duracion_min}m</span>`:''}</div>
       </div>
       <div class="pareto-ev-desc">${e.descripcion||'—'}</div>
@@ -701,7 +739,7 @@ function irAEventosConFiltro(){ document.getElementById('pareto-panel').classLis
 
 function exportCSV(){
   const h=['ID','Timestamp','Fecha_fabrica','Turno','Linea','Equipo','Componente','Sector','Tipo_evento','Descripcion','Inicio_evento','Fin_evento','Duracion_min','Estado','Responsable'];
-  const r=filteredEventos.map(e=>[e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable].join(','));
+  const r=filteredEventos.map(e=>[e.id,e.timestamp,e.fecha_fabrica,e.turno,e.linea,e.equipo,e.componente,e.sector,e.tipo_evento,'"'+(e.descripcion||'').replace(/"/g,'""')+'"',e.inicio_evento,e.fin_evento,e.duracion_min,e.estado,e.responsable]);
   const csv=[h.join(','),...r].join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
@@ -739,7 +777,7 @@ function abrirModalZafra() {
     modal = document.createElement('div');
     modal.id = 'modal-zafra';
     modal.className = 'modal-overlay';
-    modal.innerHTML = '<div class="modal-box" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;max-width:420px;width:100%;animation:fadeIn .2s ease"><div class="modal-title" style="font-family:var(--font-display);font-size:18px;color:var(--accent);margin-bottom:4px">⚙️ CONFIGURAR ZAFRA</div><p style="font-size:12px;color:var(--text2);margin-bottom:12px">Define el periodo productivo para los calculos de KPI.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">MES INICIO</label><select id="zafra-ini-mes" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5" selected>Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">DIA INICIO</label><input type="number" id="zafra-ini-dia" value="1" min="1" max="31" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">MES FIN</label><select id="zafra-fin-mes" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12" selected>Diciembre</option></select></div><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">DIA FIN</label><input type="number" id="zafra-fin-dia" value="31" min="1" max="31" style="font-size:12px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);width:100%"></div></div><div class="field-group" style="margin-bottom:14px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="zafra-habilitado" checked style="width:auto">Filtrar KPIs por periodo de zafra</label></div><div id="zafra-resumen" style="font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-bottom:14px;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="filter-btn secondary" onclick="cerrarModalZafra()">CANCELAR</button><button class="filter-btn" onclick="guardarZafra()">GUARDAR</button></div></div>';
+    modal.innerHTML = '<div class="modal-box" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;max-width:420px;width:100%;animation:fadeIn .2s ease-out"><div class="modal-title">⚙️ CONFIGURAR ZAFRA</div><p style="font-size:12px;color:var(--text2);margin-bottom:12px">Define el periodo productivo para los calculos de KPI.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">MES INICIO</label><select id="zafra-ini-mes" style="font-size:12px;padding:8px"><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5" selected>Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">DIA INICIO</label><input type="number" id="zafra-ini-dia" value="1" min="1" max="31" style="font-size:12px;padding:8px"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">MES FIN</label><select id="zafra-fin-mes" style="font-size:12px;padding:8px"><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12" selected>Diciembre</option></select></div><div class="field-group" style="margin-bottom:0"><label style="font-size:9px">DIA FIN</label><input type="number" id="zafra-fin-dia" value="31" min="1" max="31" style="font-size:12px;padding:8px"></div></div><div class="field-group" style="margin-bottom:14px"><label class="chk-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)"><input type="checkbox" id="zafra-habilitado" checked style="width:auto">Filtrar KPIs por periodo de zafra</label></div><div id="zafra-resumen" style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:14px;padding:8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">—</div><div class="btn-row" style="margin-top:0"><button class="btn btn-secondary" onclick="cerrarModalZafra()">CANCELAR</button><button class="btn btn-ok" onclick="guardarZafra()">✔ GUARDAR</button></div></div>';
     modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:var(--z-modal);align-items:center;justify-content:center;padding:16px';
     document.body.appendChild(modal);
   }
@@ -775,9 +813,9 @@ function guardarZafra() {
 function toast(m) {
   const t = document.createElement('div');
   t.textContent = m;
-  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);border:1px solid var(--border);padding:10px 20px;border-radius:8px;font-family:var(--mono);font-size:11px;z-index:9999;animation:fadeIn .2s ease;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);border:1px solid var(--border);padding:10px 20px;border-radius:8px;font-family:var(--mono);font-size:11px;z-index:999;opacity:1;transition:opacity .3s';
   document.body.appendChild(t);
-  setTimeout(function(){ t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(function(){ t.remove(); }, 300); }, 2500);
+  setTimeout(function(){ t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }, 2500);
 }
 
 </script>
