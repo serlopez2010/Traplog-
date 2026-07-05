@@ -573,7 +573,8 @@ function buildEventCard(e, canEdit, contexto = 'home') {
   const db = canDel ? `<button class="btn-del-ev" onclick="deleteEvent(${e.id}, ${contexto === 'eventos'})">ELIMINAR</button>` : '';
   const infoExtra = contexto === 'eventos' ? `${e.fecha_fabrica || ''} · ${e.turno || ''}` : `${e.turno || ''} · ${e.responsable || ''}`;
 
-  return `<div class="event-card ${e.impacto}" style="border-left:4px solid ${lc}">
+  const pulse = e.pendiente && e.impacto === 'parada' ? 'animation: pulsoRojo 2s ease-in-out infinite;' : '';
+  return `<div class="event-card ${e.impacto}" style="border-left:4px solid ${lc};${pulse}">
     <div class="event-header">
       <div style="flex:1;min-width:0">
         <div class="event-linea">${lineaBadge(e.linea)}<<span style="color:var(--text2);font-size:10px">${infoExtra}</span></div>
